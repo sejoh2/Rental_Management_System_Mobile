@@ -81,7 +81,7 @@ jobs:
       # API_URL is the hosted backend: add it under Settings > Secrets and variables > Actions > Variables.
       - run: flutter build apk --release --dart-define=API_URL=${{ vars.API_URL }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: caretaker-app-apk
           path: build/app/outputs/flutter-apk/app-release.apk
