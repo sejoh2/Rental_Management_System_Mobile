@@ -92,7 +92,8 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color info;
   final Color infoSoft;
 
-  static AppColors of(BuildContext context) => Theme.of(context).extension<AppColors>()!;
+  static AppColors of(BuildContext context) =>
+      Theme.of(context).extension<AppColors>()!;
 
   @override
   AppColors copyWith() => this;
@@ -105,7 +106,9 @@ class AppColors extends ThemeExtension<AppColors> {
 }
 
 ThemeData buildTheme(Brightness brightness) {
-  final colors = brightness == Brightness.dark ? AppColors.dark : AppColors.light;
+  final colors = brightness == Brightness.dark
+      ? AppColors.dark
+      : AppColors.light;
   final radius = BorderRadius.circular(8);
 
   OutlineInputBorder border(Color color, [double width = 1]) {
@@ -141,7 +144,11 @@ ThemeData buildTheme(Brightness brightness) {
       elevation: 0,
       scrolledUnderElevation: 0,
       shape: Border(bottom: BorderSide(color: colors.line)),
-      titleTextStyle: TextStyle(color: colors.ink, fontSize: 17, fontWeight: FontWeight.w700),
+      titleTextStyle: TextStyle(
+        color: colors.ink,
+        fontSize: 17,
+        fontWeight: FontWeight.w700,
+      ),
     ),
     cardTheme: CardThemeData(
       color: colors.surface,

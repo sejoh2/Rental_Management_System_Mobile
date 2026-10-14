@@ -1,0 +1,88 @@
+# Checks every change before it reaches the test branch, and test before it reaches main.
+# A push to main also builds an Android app file (APK) to download from the run.
+name: CI
+
+on:
+  pull_request:
+    branches: [test, main]
+  push:
+    branches: [test, main]
+  workflow_dispatch:
+
+# A newer push to the same branch cancels the older run, to save minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Format, analyze and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          # The version used for development. Update both together.
+          flutter-version: 3.44.9
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Code is formatted
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      # Dart is typed: this is the type check, plus the lint rules.
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Tests
+        run: flutter test
+
+  secrets:
+    name: No secrets in the code
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  android:
+    name: Android app file
+    needs: checks
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.44.9
+          cache: true
+
+      # Signed with the debug key until a release key is set up for the Play Store.
+      # API_URL is the hosted backend: add it under Settings > Secrets and variables > Actions > Variables.
+      - run: flutter build apk --release --dart-define=API_URL=${{ vars.API_URL }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: caretaker-app-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14

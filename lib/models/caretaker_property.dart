@@ -9,6 +9,7 @@ class CaretakerProperty {
     required this.totalUnits,
     required this.occupiedUnits,
     required this.waterBillingMethod,
+    required this.waterRatePerUnit,
     required this.canManageTenants,
     required this.canRecordPayments,
   });
@@ -21,6 +22,7 @@ class CaretakerProperty {
       totalUnits: (json['total_units'] as num?)?.toInt() ?? 0,
       occupiedUnits: (json['occupied_units'] as num?)?.toInt() ?? 0,
       waterBillingMethod: json['water_billing_method'] as String? ?? '',
+      waterRatePerUnit: (json['water_rate_per_unit'] as num?)?.toDouble(),
       canManageTenants: json['can_manage_tenants'] == true,
       canRecordPayments: json['can_record_payments'] == true,
     );
@@ -32,6 +34,9 @@ class CaretakerProperty {
   final int totalUnits;
   final int occupiedUnits;
   final String waterBillingMethod;
+
+  /// The property's rate; a unit may have its own.
+  final double? waterRatePerUnit;
 
   /// Level 2: may add and edit tenants, and see their documents.
   final bool canManageTenants;

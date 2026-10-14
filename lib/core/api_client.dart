@@ -61,12 +61,27 @@ class ApiClient {
     return List.generate(32, (_) => hex[_random.nextInt(16)]).join();
   }
 
-  Future<Json> get(String path, {Map<String, String>? query, bool auth = true}) {
+  Future<Json> get(
+    String path, {
+    Map<String, String>? query,
+    bool auth = true,
+  }) {
     return _request('GET', path, query: query, auth: auth);
   }
 
-  Future<Json> post(String path, {Object? body, bool auth = true, String? saveKey}) {
-    return _request('POST', path, body: body ?? const {}, auth: auth, saveKey: saveKey);
+  Future<Json> post(
+    String path, {
+    Object? body,
+    bool auth = true,
+    String? saveKey,
+  }) {
+    return _request(
+      'POST',
+      path,
+      body: body ?? const {},
+      auth: auth,
+      saveKey: saveKey,
+    );
   }
 
   Future<Json> put(String path, {Object? body, String? saveKey}) {
@@ -85,23 +100,43 @@ class ApiClient {
     bool auth = true,
     String? saveKey,
   }) async {
-    var response = await _send(method, path, body: body, query: query, auth: auth, saveKey: saveKey);
+    var response = await _send(
+      method,
+      path,
+      body: body,
+      query: query,
+      auth: auth,
+      saveKey: saveKey,
+    );
 
     if (response.statusCode == 401 && auth) {
       if (!await _renewSession()) {
         await session.clear();
         onSessionExpired?.call();
 
-        throw const ApiException('You have been signed out. Sign in again.', status: 401);
+        throw const ApiException(
+          'You have been signed out. Sign in again.',
+          status: 401,
+        );
       }
 
-      response = await _send(method, path, body: body, query: query, auth: auth, saveKey: saveKey);
+      response = await _send(
+        method,
+        path,
+        body: body,
+        query: query,
+        auth: auth,
+        saveKey: saveKey,
+      );
     }
 
     final payload = _decode(response);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException(_errorMessage(payload, response.statusCode), status: response.statusCode);
+      throw ApiException(
+        _errorMessage(payload, response.statusCode),
+        status: response.statusCode,
+      );
     }
 
     return payload ?? const {};
@@ -115,9 +150,9 @@ class ApiClient {
     required bool auth,
     String? saveKey,
   }) async {
-    final uri = Uri.parse('$baseUrl$path').replace(
-      queryParameters: query == null || query.isEmpty ? null : query,
-    );
+    final uri = Uri.parse(
+      '$baseUrl$path',
+    ).replace(queryParameters: query == null || query.isEmpty ? null : query);
 
     final request = http.Request(method, uri);
 
@@ -137,7 +172,9 @@ class ApiClient {
     }
 
     try {
-      return await http.Response.fromStream(await _http.send(request).timeout(_timeout));
+      return await http.Response.fromStream(
+        await _http.send(request).timeout(_timeout),
+      );
     } on TimeoutException {
       throw const ApiException(
         'The server took too long to answer. Check your connection and try again.',
@@ -198,7 +235,11 @@ class ApiClient {
     final parts = <String>[];
     final error = payload?['error'];
 
-    parts.add(error is String && error.isNotEmpty ? error : 'The request failed ($status).');
+    parts.add(
+      error is String && error.isNotEmpty
+          ? error
+          : 'The request failed ($status).',
+    );
 
     final details = payload?['details'];
 

@@ -71,7 +71,9 @@ class _SignInPageState extends State<SignInPage> {
 
   Future<void> _verify() {
     // On success the app moves on by itself: the session has changed.
-    return _run(() => AppScope.of(context).auth.verifyCode(_sentTo!, _code.text.trim()));
+    return _run(
+      () => AppScope.of(context).auth.verifyCode(_sentTo!, _code.text.trim()),
+    );
   }
 
   void _startCountdown(int seconds) {
@@ -80,7 +82,9 @@ class _SignInPageState extends State<SignInPage> {
 
     _countdown = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_resendIn <= 1) timer.cancel();
-      if (mounted) setState(() => _resendIn = _resendIn > 0 ? _resendIn - 1 : 0);
+      if (mounted) {
+        setState(() => _resendIn = _resendIn > 0 ? _resendIn - 1 : 0);
+      }
     });
   }
 
@@ -101,19 +105,31 @@ class _SignInPageState extends State<SignInPage> {
                 children: [
                   Text(
                     appName,
-                    style: TextStyle(color: colors.accentInk, fontSize: 15, fontWeight: FontWeight.w800),
+                    style: TextStyle(
+                      color: colors.accentInk,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 18),
                   Text(
                     enteringCode ? 'Enter the code' : 'Sign in',
-                    style: TextStyle(color: colors.ink, fontSize: 24, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      color: colors.ink,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     enteringCode
                         ? 'We sent a six-digit code by SMS to $_sentTo.'
                         : 'Enter the phone number the property owner registered for you. We will send you a code by SMS.',
-                    style: TextStyle(color: colors.inkSoft, fontSize: 14, height: 1.5),
+                    style: TextStyle(
+                      color: colors.inkSoft,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   if (enteringCode) ..._codeStep(colors) else ..._phoneStep(),
@@ -137,8 +153,13 @@ class _SignInPageState extends State<SignInPage> {
         keyboardType: TextInputType.phone,
         autofillHints: const [AutofillHints.telephoneNumber],
         textInputAction: TextInputAction.done,
-        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]'))],
-        decoration: const InputDecoration(labelText: 'Phone number', hintText: '0712 345 678'),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]')),
+        ],
+        decoration: const InputDecoration(
+          labelText: 'Phone number',
+          hintText: '0712 345 678',
+        ),
         onChanged: (_) => setState(() {}),
         onSubmitted: (_) {
           if (!_working && _cleanPhone.length >= 9) _sendCode();
@@ -161,7 +182,11 @@ class _SignInPageState extends State<SignInPage> {
         autofillHints: const [AutofillHints.oneTimeCode],
         maxLength: 6,
         textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.w700),
+        style: const TextStyle(
+          fontSize: 24,
+          letterSpacing: 8,
+          fontWeight: FontWeight.w700,
+        ),
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         decoration: const InputDecoration(counterText: '', hintText: '------'),
         onChanged: (value) {
@@ -178,7 +203,9 @@ class _SignInPageState extends State<SignInPage> {
       const SizedBox(height: 8),
       TextButton(
         onPressed: _working || _resendIn > 0 ? null : _sendCode,
-        child: Text(_resendIn > 0 ? 'Send a new code in $_resendIn s' : 'Send a new code'),
+        child: Text(
+          _resendIn > 0 ? 'Send a new code in $_resendIn s' : 'Send a new code',
+        ),
       ),
       TextButton(
         onPressed: _working

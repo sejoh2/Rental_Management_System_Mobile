@@ -4,13 +4,19 @@ import 'package:caretaker_app/models/caretaker_property.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('IDs are kept as text, whether the server sends a number or a string', () {
-    final fromNumber = AppUser.fromJson({'user_id': 42, 'role': 'caretaker'});
-    final fromText = AppUser.fromJson({'user_id': 'usr_8f3a', 'role': 'caretaker'});
+  test(
+    'IDs are kept as text, whether the server sends a number or a string',
+    () {
+      final fromNumber = AppUser.fromJson({'user_id': 42, 'role': 'caretaker'});
+      final fromText = AppUser.fromJson({
+        'user_id': 'usr_8f3a',
+        'role': 'caretaker',
+      });
 
-    expect(fromNumber.id, '42');
-    expect(fromText.id, 'usr_8f3a');
-  });
+      expect(fromNumber.id, '42');
+      expect(fromText.id, 'usr_8f3a');
+    },
+  );
 
   test('a user who has not entered a name is asked for it', () {
     final user = AppUser.fromJson({

@@ -34,5 +34,6 @@ class AppUser {
 
   bool get isCaretaker => role == 'caretaker';
 
-  String get fullName => [firstName, lastName].where((part) => part.isNotEmpty).join(' ');
+  String get fullName =>
+      [firstName, lastName].where((part) => part.isNotEmpty).join(' ');
 }

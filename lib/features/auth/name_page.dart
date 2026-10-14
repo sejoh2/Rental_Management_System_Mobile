@@ -56,12 +56,20 @@ class _NamePageState extends State<NamePage> {
                 children: [
                   Text(
                     'What is your name?',
-                    style: TextStyle(color: colors.ink, fontSize: 24, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      color: colors.ink,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'It is shown beside the readings, repairs and payments you record.',
-                    style: TextStyle(color: colors.inkSoft, fontSize: 14, height: 1.5),
+                    style: TextStyle(
+                      color: colors.inkSoft,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   TextField(
@@ -69,7 +77,10 @@ class _NamePageState extends State<NamePage> {
                     autofocus: true,
                     textCapitalization: TextCapitalization.words,
                     autofillHints: const [AutofillHints.name],
-                    decoration: const InputDecoration(labelText: 'Full names', hintText: 'e.g. Mary Wanjiku'),
+                    decoration: const InputDecoration(
+                      labelText: 'Full names',
+                      hintText: 'e.g. Mary Wanjiku',
+                    ),
                     onChanged: (_) => setState(() {}),
                     onSubmitted: (_) {
                       if (ready && !_saving) _save();

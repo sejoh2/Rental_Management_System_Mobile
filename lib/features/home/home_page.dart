@@ -5,6 +5,7 @@ import '../../core/app_scope.dart';
 import '../../core/app_theme.dart';
 import '../../models/caretaker_property.dart';
 import '../../widgets/message_box.dart';
+import '../property/property_page.dart';
 
 /// Where the caretaker lands: the properties they look after.
 class HomePage extends StatefulWidget {
@@ -38,13 +39,17 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      final response = await AppScope.of(context).api.get('/api/caretaker/properties');
+      final response = await AppScope.of(
+        context,
+      ).api.get('/api/caretaker/properties');
       final rows = response['data'] as List? ?? const [];
 
       if (!mounted) return;
 
       setState(() {
-        _properties = [for (final row in rows) CaretakerProperty.fromJson(row as Json)];
+        _properties = [
+          for (final row in rows) CaretakerProperty.fromJson(row as Json),
+        ];
       });
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
@@ -62,8 +67,14 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Sign out?'),
         content: const Text('You will need a new SMS code to sign in again.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Stay signed in')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sign out')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Stay signed in'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sign out'),
+          ),
         ],
       ),
     );
@@ -79,7 +90,11 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(user == null || user.firstName.isEmpty ? 'My properties' : 'Hello, ${user.firstName}'),
+        title: Text(
+          user == null || user.firstName.isEmpty
+              ? 'My properties'
+              : 'Hello, ${user.firstName}',
+        ),
         actions: [
           IconButton(
             onPressed: _confirmSignOut,
@@ -97,7 +112,10 @@ class _HomePageState extends State<HomePage> {
             if (_error != null) ...[
               ErrorBox(_error!),
               const SizedBox(height: 12),
-              OutlinedButton(onPressed: _loading ? null : _load, child: const Text('Try again')),
+              OutlinedButton(
+                onPressed: _loading ? null : _load,
+                child: const Text('Try again'),
+              ),
               const SizedBox(height: 12),
             ],
             if (properties == null && _loading)
@@ -111,12 +129,23 @@ class _HomePageState extends State<HomePage> {
                 child: Text(
                   'You are not assigned to any property yet. Ask the owner to add you to one, then pull down to refresh.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: colors.inkSoft, fontSize: 14, height: 1.5),
+                  style: TextStyle(
+                    color: colors.inkSoft,
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
                 ),
               ),
             if (properties != null)
               for (final property in properties) ...[
-                _PropertyCard(property),
+                _PropertyCard(
+                  property,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => PropertyPage(property: property),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 12),
               ],
           ],
@@ -127,9 +156,10 @@ class _HomePageState extends State<HomePage> {
 }
 
 class _PropertyCard extends StatelessWidget {
-  const _PropertyCard(this.property);
+  const _PropertyCard(this.property, {required this.onTap});
 
   final CaretakerProperty property;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -142,33 +172,51 @@ class _PropertyCard extends StatelessWidget {
     ];
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              property.name,
-              style: TextStyle(color: colors.ink, fontSize: 16, fontWeight: FontWeight.w700),
-            ),
-            if (property.location.isNotEmpty) ...[
-              const SizedBox(height: 2),
-              Text(property.location, style: TextStyle(color: colors.inkFaint, fontSize: 13)),
-            ],
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                _Figure(label: 'Units', value: '${property.totalUnits}'),
-                _Figure(label: 'Occupied', value: '${property.occupiedUnits}'),
-                _Figure(label: 'Vacant', value: '${property.vacantUnits}'),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                property.name,
+                style: TextStyle(
+                  color: colors.ink,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (property.location.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  property.location,
+                  style: TextStyle(color: colors.inkFaint, fontSize: 13),
+                ),
               ],
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'You can: ${allowed.join(' · ')}',
-              style: TextStyle(color: colors.inkSoft, fontSize: 12, height: 1.5),
-            ),
-          ],
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  _Figure(label: 'Units', value: '${property.totalUnits}'),
+                  _Figure(
+                    label: 'Occupied',
+                    value: '${property.occupiedUnits}',
+                  ),
+                  _Figure(label: 'Vacant', value: '${property.vacantUnits}'),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'You can: ${allowed.join(' · ')}',
+                style: TextStyle(
+                  color: colors.inkSoft,
+                  fontSize: 12,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -189,7 +237,14 @@ class _Figure extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(value, style: TextStyle(color: colors.ink, fontSize: 20, fontWeight: FontWeight.w700)),
+          Text(
+            value,
+            style: TextStyle(
+              color: colors.ink,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           Text(label, style: TextStyle(color: colors.inkFaint, fontSize: 12)),
         ],
       ),

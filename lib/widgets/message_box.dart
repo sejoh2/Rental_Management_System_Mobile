@@ -64,21 +64,35 @@ class FullScreenMessage extends StatelessWidget {
                   Text(
                     title,
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: colors.ink, fontSize: 20, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      color: colors.ink,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     message,
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: colors.inkSoft, fontSize: 14, height: 1.5),
+                    style: TextStyle(
+                      color: colors.inkSoft,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
                   ),
                   if (actionLabel != null) ...[
                     const SizedBox(height: 24),
-                    FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+                    FilledButton(
+                      onPressed: onAction,
+                      child: Text(actionLabel!),
+                    ),
                   ],
                   if (secondaryLabel != null) ...[
                     const SizedBox(height: 8),
-                    TextButton(onPressed: onSecondary, child: Text(secondaryLabel!)),
+                    TextButton(
+                      onPressed: onSecondary,
+                      child: Text(secondaryLabel!),
+                    ),
                   ],
                 ],
               ),

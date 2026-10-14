@@ -111,7 +111,11 @@ class AuthController extends ChangeNotifier {
     try {
       // Ends the session on the server too. Signing out on the phone has
       // already happened, so a failure here is not shown.
-      await api.post('/api/auth/logout', body: {'refresh_token': refresh}, auth: false);
+      await api.post(
+        '/api/auth/logout',
+        body: {'refresh_token': refresh},
+        auth: false,
+      );
     } on ApiException {
       // Nothing to do.
     }
