@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_theme.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_text.dart';
+import '../core/theme/app_theme.dart';
 
 /// An error shown inside a form or a screen.
 class ErrorBox extends StatelessWidget {
@@ -17,11 +19,168 @@ class ErrorBox extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: colors.dangerSoft,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppSpace.controlRadius),
       ),
-      child: Text(
-        message,
-        style: TextStyle(color: colors.danger, fontSize: 13, height: 1.4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline, size: 18, color: colors.danger),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: AppText.small.copyWith(color: colors.danger, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A note in a soft box: what will happen, or why something is not possible.
+class NoteBox extends StatelessWidget {
+  const NoteBox(this.message, {super.key, this.icon = Icons.info_outline});
+
+  final String message;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border.all(color: colors.line),
+        borderRadius: BorderRadius.circular(AppSpace.controlRadius),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: colors.inkFaint),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: AppText.small.copyWith(
+                color: colors.inkSoft,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Shown in place of a list while it loads for the first time.
+class LoadingView extends StatelessWidget {
+  const LoadingView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(AppSpace.xxl),
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: CircularProgressIndicator(strokeWidth: 2.6),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown in place of a list that could not be loaded, with a way to try again.
+class ErrorView extends StatelessWidget {
+  const ErrorView({super.key, required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return EmptyView(
+      icon: Icons.cloud_off_outlined,
+      title: 'Could not load this',
+      message: message,
+      actionLabel: 'Try again',
+      onAction: onRetry,
+    );
+  }
+}
+
+/// Shown when there is nothing to list, or nothing yet.
+class EmptyView extends StatelessWidget {
+  const EmptyView({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.xl,
+          vertical: AppSpace.xxl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: colors.lineSoft,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: colors.inkFaint, size: 26),
+            ),
+            const SizedBox(height: AppSpace.lg),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: AppText.title.copyWith(color: colors.ink, fontSize: 16),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: AppText.small.copyWith(
+                color: colors.inkSoft,
+                fontSize: 13,
+              ),
+            ),
+            if (actionLabel != null) ...[
+              const SizedBox(height: AppSpace.lg),
+              SizedBox(
+                width: 200,
+                child: OutlinedButton(
+                  onPressed: onAction,
+                  child: Text(actionLabel!),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -33,6 +192,7 @@ class FullScreenMessage extends StatelessWidget {
     super.key,
     required this.title,
     required this.message,
+    this.icon = Icons.info_outline,
     this.actionLabel,
     this.onAction,
     this.secondaryLabel,
@@ -41,6 +201,7 @@ class FullScreenMessage extends StatelessWidget {
 
   final String title;
   final String message;
+  final IconData icon;
   final String? actionLabel;
   final VoidCallback? onAction;
   final String? secondaryLabel;
@@ -54,41 +215,38 @@ class FullScreenMessage extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpace.xl),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Icon(icon, size: 40, color: colors.inkFaint),
+                  const SizedBox(height: AppSpace.lg),
                   Text(
                     title,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: AppText.headline.copyWith(
                       color: colors.ink,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 22,
                     ),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     message,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: colors.inkSoft,
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
+                    style: AppText.text.copyWith(color: colors.inkSoft),
                   ),
                   if (actionLabel != null) ...[
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpace.xl),
                     FilledButton(
                       onPressed: onAction,
                       child: Text(actionLabel!),
                     ),
                   ],
                   if (secondaryLabel != null) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpace.sm),
                     TextButton(
                       onPressed: onSecondary,
                       child: Text(secondaryLabel!),

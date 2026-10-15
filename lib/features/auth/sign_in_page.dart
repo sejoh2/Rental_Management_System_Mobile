@@ -3,13 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../config.dart';
 import '../../core/api_client.dart';
 import '../../core/app_scope.dart';
-import '../../core/app_theme.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text.dart';
+import '../../core/theme/app_theme.dart';
 import '../../widgets/message_box.dart';
+import 'auth_layout.dart';
 
 /// Sign-in: the phone number, then the six-digit code sent to it by SMS.
+/// On success the app moves on by itself (the router follows the session).
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
 
@@ -59,7 +62,7 @@ class _SignInPageState extends State<SignInPage> {
     final phone = _cleanPhone;
 
     return _run(() async {
-      final seconds = await AppScope.of(context).auth.requestCode(phone);
+      final seconds = await AppScope.read(context).auth.requestCode(phone);
 
       if (!mounted) return;
 
@@ -70,9 +73,8 @@ class _SignInPageState extends State<SignInPage> {
   }
 
   Future<void> _verify() {
-    // On success the app moves on by itself: the session has changed.
     return _run(
-      () => AppScope.of(context).auth.verifyCode(_sentTo!, _code.text.trim()),
+      () => AppScope.read(context).auth.verifyCode(_sentTo!, _code.text.trim()),
     );
   }
 
@@ -88,65 +90,38 @@ class _SignInPageState extends State<SignInPage> {
     });
   }
 
+  void _changeNumber() {
+    _countdown?.cancel();
+    setState(() {
+      _sentTo = null;
+      _error = null;
+      _resendIn = 0;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     final enteringCode = _sentTo != null;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    appName,
-                    style: TextStyle(
-                      color: colors.accentInk,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    enteringCode ? 'Enter the code' : 'Sign in',
-                    style: TextStyle(
-                      color: colors.ink,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    enteringCode
-                        ? 'We sent a six-digit code by SMS to $_sentTo.'
-                        : 'Enter the phone number the property owner registered for you. We will send you a code by SMS.',
-                    style: TextStyle(
-                      color: colors.inkSoft,
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  if (enteringCode) ..._codeStep(colors) else ..._phoneStep(),
-                  if (_error != null) ...[
-                    const SizedBox(height: 14),
-                    ErrorBox(_error!),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+    return AuthLayout(
+      title: enteringCode ? 'Enter the code' : 'Sign in',
+      subtitle: enteringCode
+          ? 'We sent a six-digit code by SMS to $_sentTo.'
+          : 'Use the phone number the property owner registered for you. We will send you a code by SMS.',
+      onBack: enteringCode && !_working ? _changeNumber : null,
+      children: [
+        if (enteringCode) ..._codeStep() else ..._phoneStep(),
+        if (_error != null) ...[
+          const SizedBox(height: AppSpace.lg),
+          ErrorBox(_error!),
+        ],
+      ],
     );
   }
 
   List<Widget> _phoneStep() {
+    final ready = !_working && _cleanPhone.length >= 9;
+
     return [
       TextField(
         controller: _phone,
@@ -156,24 +131,31 @@ class _SignInPageState extends State<SignInPage> {
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]')),
         ],
+        style: AppText.amount.copyWith(
+          fontSize: 17,
+          color: AppColors.of(context).ink,
+        ),
         decoration: const InputDecoration(
           labelText: 'Phone number',
           hintText: '0712 345 678',
+          prefixIcon: Icon(Icons.phone_outlined),
         ),
         onChanged: (_) => setState(() {}),
         onSubmitted: (_) {
-          if (!_working && _cleanPhone.length >= 9) _sendCode();
+          if (ready) _sendCode();
         },
       ),
-      const SizedBox(height: 16),
+      const SizedBox(height: AppSpace.lg),
       FilledButton(
-        onPressed: _working || _cleanPhone.length < 9 ? null : _sendCode,
+        onPressed: ready ? _sendCode : null,
         child: Text(_working ? 'Sending...' : 'Send code'),
       ),
     ];
   }
 
-  List<Widget> _codeStep(AppColors colors) {
+  List<Widget> _codeStep() {
+    final colors = AppColors.of(context);
+
     return [
       TextField(
         controller: _code,
@@ -182,42 +164,36 @@ class _SignInPageState extends State<SignInPage> {
         autofillHints: const [AutofillHints.oneTimeCode],
         maxLength: 6,
         textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: 24,
-          letterSpacing: 8,
-          fontWeight: FontWeight.w700,
+        style: AppText.figure.copyWith(
+          fontSize: 28,
+          letterSpacing: 10,
+          color: colors.ink,
         ),
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        decoration: const InputDecoration(counterText: '', hintText: '------'),
+        decoration: const InputDecoration(counterText: '', hintText: '······'),
         onChanged: (value) {
           setState(() {});
 
           if (value.length == 6 && !_working) _verify();
         },
       ),
-      const SizedBox(height: 16),
+      const SizedBox(height: AppSpace.lg),
       FilledButton(
         onPressed: _working || _code.text.length != 6 ? null : _verify,
         child: Text(_working ? 'Checking...' : 'Sign in'),
       ),
-      const SizedBox(height: 8),
+      const SizedBox(height: AppSpace.sm),
       TextButton(
         onPressed: _working || _resendIn > 0 ? null : _sendCode,
         child: Text(
-          _resendIn > 0 ? 'Send a new code in $_resendIn s' : 'Send a new code',
+          _resendIn > 0
+              ? 'Send a new code in ${_resendIn}s'
+              : 'Send a new code',
         ),
       ),
       TextButton(
-        onPressed: _working
-            ? null
-            : () {
-                _countdown?.cancel();
-                setState(() {
-                  _sentTo = null;
-                  _error = null;
-                  _resendIn = 0;
-                });
-              },
+        style: TextButton.styleFrom(foregroundColor: colors.inkSoft),
+        onPressed: _working ? null : _changeNumber,
         child: const Text('Use a different number'),
       ),
     ];

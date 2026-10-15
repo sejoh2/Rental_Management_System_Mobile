@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_theme.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_text.dart';
 
 enum Tone { neutral, success, warning, danger, info, accent }
 
-/// A small coloured label, like the web app's status badges.
+/// A small coloured label, like the web app's status badges: "Paid", "Owing".
 class StatusChip extends StatelessWidget {
   const StatusChip(this.label, {super.key, this.tone = Tone.neutral});
 
@@ -32,10 +33,11 @@ class StatusChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
+        style: AppText.small.copyWith(
           color: foreground,
           fontSize: 11,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
+          height: 1.3,
         ),
       ),
     );

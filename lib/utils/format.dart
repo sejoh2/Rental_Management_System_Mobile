@@ -61,6 +61,18 @@ String monthLabel(DateTime month) =>
 /// A month's first day, with no time of day.
 DateTime monthOf(DateTime date) => DateTime(date.year, date.month);
 
+/// "14 Oct 2026"
+String formatDay(DateTime date) =>
+    '${date.day} ${_months[date.month - 1].substring(0, 3)} ${date.year}';
+
+/// A date as the server takes it: "2026-10-14".
+String dayKey(DateTime date) =>
+    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+/// A month as the electricity bills name it: "2026-10".
+String monthKey(DateTime month) =>
+    '${month.year}-${month.month.toString().padLeft(2, '0')}';
+
 /// Reads a typed number, allowing a comma for the decimal point. null if it is not a number.
 double? parseNumber(String text) {
   final cleaned = text.trim().replaceAll(' ', '').replaceAll(',', '.');
