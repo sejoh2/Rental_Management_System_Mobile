@@ -8,6 +8,7 @@ import '../../core/app_scope.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/code_boxes.dart';
 import '../../widgets/message_box.dart';
 import 'auth_layout.dart';
 
@@ -157,24 +158,12 @@ class _SignInPageState extends State<SignInPage> {
     final colors = AppColors.of(context);
 
     return [
-      TextField(
+      CodeBoxes(
         controller: _code,
-        autofocus: true,
-        keyboardType: TextInputType.number,
-        autofillHints: const [AutofillHints.oneTimeCode],
-        maxLength: 6,
-        textAlign: TextAlign.center,
-        style: AppText.figure.copyWith(
-          fontSize: 28,
-          letterSpacing: 10,
-          color: colors.ink,
-        ),
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        decoration: const InputDecoration(counterText: '', hintText: '······'),
-        onChanged: (value) {
-          setState(() {});
-
-          if (value.length == 6 && !_working) _verify();
+        enabled: !_working,
+        onChanged: (_) => setState(() {}),
+        onCompleted: (_) {
+          if (!_working) _verify();
         },
       ),
       const SizedBox(height: AppSpace.lg),

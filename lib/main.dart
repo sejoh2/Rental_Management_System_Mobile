@@ -5,6 +5,7 @@ import 'config.dart';
 import 'core/api_client.dart';
 import 'core/app_scope.dart';
 import 'core/auth_controller.dart';
+import 'core/notices_controller.dart';
 import 'core/preferences.dart';
 import 'core/properties_controller.dart';
 import 'core/session_store.dart';
@@ -24,6 +25,13 @@ Future<void> main() async {
   final properties = PropertiesController(
     repository: PropertyRepository(api),
     preferences: preferences,
+  );
+
+  // What is new for the caretaker, looked at every minute while signed in.
+  final notices = NoticesController(
+    api: api,
+    auth: auth,
+    properties: properties,
   );
 
   // The caretaker's properties are loaded once signed in, and forgotten on sign-out.
@@ -52,6 +60,7 @@ Future<void> main() async {
         auth: auth,
         preferences: preferences,
         properties: properties,
+        notices: notices,
       ),
     ),
   );

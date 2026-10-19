@@ -1,4 +1,5 @@
 import '../core/api_client.dart';
+import '../utils/format.dart';
 
 /// A house or shop in a property.
 class Unit {
@@ -13,6 +14,12 @@ class Unit {
     required this.waterRatePerUnit,
     required this.meterNumber,
     required this.tenant,
+    this.rentDeposit = 0,
+    this.waterDeposit = 0,
+    this.waterFixedMonthlyBill,
+    this.electricityBillingMethod = 'fixed_monthly',
+    this.electricityMonthlyCharge,
+    this.electricityDeposit,
   });
 
   factory Unit.fromJson(Json json) {
@@ -31,6 +38,15 @@ class Unit {
       tenant: tenant is Map<String, dynamic>
           ? UnitTenant.fromJson(tenant)
           : null,
+      rentDeposit: (json['rent_deposit'] as num?)?.toDouble() ?? 0,
+      waterDeposit: (json['water_deposit'] as num?)?.toDouble() ?? 0,
+      waterFixedMonthlyBill: (json['water_fixed_monthly_bill'] as num?)
+          ?.toDouble(),
+      electricityBillingMethod:
+          json['electricity_billing_method'] as String? ?? 'fixed_monthly',
+      electricityMonthlyCharge: (json['electricity_monthly_charge'] as num?)
+          ?.toDouble(),
+      electricityDeposit: (json['electricity_deposit'] as num?)?.toDouble(),
     );
   }
 
@@ -49,9 +65,54 @@ class Unit {
   /// Who lives there now, if anyone.
   final UnitTenant? tenant;
 
+  /// Charged once when a tenant moves in. Zero means none.
+  final double rentDeposit;
+  final double waterDeposit;
+
+  /// The fixed water bill each month, when water is billed that way.
+  final double? waterFixedMonthlyBill;
+
+  /// fixed_monthly (the amount below, with rent) or entered (typed each month).
+  final String electricityBillingMethod;
+
+  /// Billed with rent each month; null when electricity is not billed.
+  final double? electricityMonthlyCharge;
+  final double? electricityDeposit;
+
   bool get isOccupied => status == 'occupied' && tenant != null;
 
   bool get isMetered => waterBillingMethod == 'per_unit_metered';
+
+  bool get isVacant => status == 'vacant';
+
+  /// "Metered at KES 150 a unit", "Fixed KES 500 a month", as the owner set it.
+  String waterLabel({double? propertyRate}) {
+    return switch (waterBillingMethod) {
+      'per_unit_metered' =>
+        (waterRatePerUnit ?? propertyRate) == null
+            ? 'Metered'
+            : 'Metered at ${formatKes(waterRatePerUnit ?? propertyRate!)} a unit',
+      'fixed_monthly' =>
+        waterFixedMonthlyBill == null
+            ? 'Fixed amount each month'
+            : 'Fixed ${formatKes(waterFixedMonthlyBill!)} a month',
+      'included_in_rent' => 'Included in rent',
+      _ => waterBillingMethod.replaceAll('_', ' '),
+    };
+  }
+
+  /// "Typed in each month", "Fixed KES 1,000 a month with rent", "Not billed".
+  String get electricityLabel {
+    if (electricityBillingMethod == 'entered') {
+      return 'Amount typed in each month';
+    }
+
+    final charge = electricityMonthlyCharge;
+
+    return charge == null
+        ? 'Not billed'
+        : 'Fixed ${formatKes(charge)} a month, with rent';
+  }
 
   /// "One bedroom", or the owner's own wording, which is kept as typed.
   String get typeLabel {

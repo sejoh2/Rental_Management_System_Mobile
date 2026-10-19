@@ -11,7 +11,6 @@ import '../../models/water_reading.dart';
 import '../../utils/format.dart';
 import '../../widgets/attachments.dart';
 import '../../widgets/message_box.dart';
-import '../../widgets/property_gate.dart';
 import 'reading_forms.dart';
 import 'record_reading_page.dart';
 
@@ -148,11 +147,8 @@ class _WaterReadingsPageState extends State<WaterReadingsPage> {
       return !readingsOf(unit).any((item) => item.isFinal);
     }
 
+    // Shown in the Water & Electricity tab, under its title.
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Water readings'),
-        bottom: const PropertyStrip(),
-      ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: CustomScrollView(

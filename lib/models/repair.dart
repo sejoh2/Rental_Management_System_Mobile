@@ -23,6 +23,15 @@ class Repair {
     required this.cancellationReason,
     required this.createdAt,
     required this.resolvedAt,
+    this.propertyId = '',
+    this.propertyName,
+    this.assignedCaretakerId,
+    this.assignedCaretakerName,
+    this.expenseId,
+    this.tenantChargeId,
+    this.chargeSmsSentAt,
+    this.caretakerNotice,
+    this.caretakerNoticeAt,
   });
 
   factory Repair.fromJson(Json json) {
@@ -46,6 +55,24 @@ class Repair {
       cancellationReason: json['cancellation_reason'] as String?,
       createdAt: parseDay(json['created_at']),
       resolvedAt: parseDay(json['resolved_at']),
+      propertyId: '${json['property_id'] ?? ''}',
+      propertyName: json['property_name'] as String?,
+      assignedCaretakerId: json['assigned_caretaker_id'] == null
+          ? null
+          : '${json['assigned_caretaker_id']}',
+      assignedCaretakerName: (json['assigned_caretaker_name'] as String?)
+          ?.trim(),
+      expenseId: json['expense_id'] == null ? null : '${json['expense_id']}',
+      tenantChargeId: json['tenant_charge_id'] == null
+          ? null
+          : '${json['tenant_charge_id']}',
+      chargeSmsSentAt: DateTime.tryParse(
+        json['charge_sms_sent_at'] as String? ?? '',
+      )?.toLocal(),
+      caretakerNotice: json['caretaker_notice'] as String?,
+      caretakerNoticeAt: DateTime.tryParse(
+        json['caretaker_notice_at'] as String? ?? '',
+      )?.toLocal(),
     );
   }
 
@@ -75,7 +102,33 @@ class Repair {
   final DateTime? createdAt;
   final DateTime? resolvedAt;
 
+  final String propertyId;
+  final String? propertyName;
+
+  /// The caretaker handling it; null when the owner handles it.
+  final String? assignedCaretakerId;
+  final String? assignedCaretakerName;
+
+  /// Set once the cost is recorded as an expense; it is then fixed.
+  final String? expenseId;
+
+  /// Set when the cost was charged to the tenant.
+  final String? tenantChargeId;
+
+  /// When the tenant was last sent an SMS about the charge.
+  final DateTime? chargeSmsSentAt;
+
+  /// New for the caretaker until opened: reported (by the owner) or
+  /// assigned (given to them by the owner).
+  final String? caretakerNotice;
+  final DateTime? caretakerNoticeAt;
+
   bool get isOpen => status == 'reported' || status == 'in_progress';
+
+  bool get costRecorded => expenseId != null;
+
+  bool isFor(String? caretakerId) =>
+      caretakerId != null && assignedCaretakerId == caretakerId;
 }
 
 /// The words used for repairs, as on the web.
@@ -96,6 +149,14 @@ abstract final class RepairLabels {
     'normal': 'Normal',
     'high': 'High',
     'urgent': 'Urgent',
+  };
+
+  /// Who pays, as on the web.
+  static const payers = {'owner': 'Owner', 'tenant': 'Tenant'};
+
+  static const chargeTimings = {
+    'now': 'Now: from their credit or next payment',
+    'move_out': 'At move-out: deducted from their deposit',
   };
 
   static const statuses = {

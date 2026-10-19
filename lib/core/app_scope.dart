@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'api_client.dart';
 import 'auth_controller.dart';
+import 'notices_controller.dart';
 import 'preferences.dart';
 import 'properties_controller.dart';
 
@@ -12,18 +13,20 @@ class AppServices {
     required this.auth,
     required this.preferences,
     required this.properties,
+    required this.notices,
   });
 
   final ApiClient api;
   final AuthController auth;
   final AppPreferences preferences;
   final PropertiesController properties;
+  final NoticesController notices;
 }
 
 /// Gives every screen the shared services.
 ///
 /// A screen that calls `AppScope.of(context)` is rebuilt when the session,
-/// the preferences or the selected property change.
+/// the preferences, the selected property or the notices change.
 class AppScope extends InheritedNotifier<Listenable> {
   AppScope({super.key, required this.services, required super.child})
     : super(
@@ -31,6 +34,7 @@ class AppScope extends InheritedNotifier<Listenable> {
           services.auth,
           services.preferences,
           services.properties,
+          services.notices,
         ]),
       );
 

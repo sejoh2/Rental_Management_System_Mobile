@@ -27,6 +27,8 @@ class RepairRepository {
     required String category,
     required String priority,
     String? unitId,
+    bool chargeToTenant = false,
+    String chargeTiming = 'now',
     required String saveKey,
   }) async {
     final response = await api.post(
@@ -38,8 +40,41 @@ class RepairRepository {
         'category': category,
         'priority': priority,
         if (unitId != null) 'unit_id': int.parse(unitId),
+        'charge_to_tenant': chargeToTenant,
+        if (chargeToTenant) 'charge_timing': chargeTiming,
       },
     );
+
+    return Repair.fromJson(response['data'] as Json);
+  }
+
+  /// One repair. Opening it clears its "new" mark for this caretaker.
+  Future<Repair> get(String repairId) async {
+    final response = await api.get('/api/maintenance/$repairId');
+
+    return Repair.fromJson(response['data'] as Json);
+  }
+
+  /// What is new for this caretaker: repairs the owner reported, or gave
+  /// to them, not opened yet. Newest first.
+  Future<List<Repair>> notices() async {
+    final response = await api.get('/api/maintenance/notices');
+
+    return [
+      for (final row in response['data'] as List? ?? const [])
+        Repair.fromJson(row as Json),
+    ];
+  }
+
+  /// "Mark all as read".
+  Future<void> markNoticesSeen() {
+    return api.post('/api/maintenance/notices/seen');
+  }
+
+  /// Tells the tenant by SMS about a repair charged to them. Sent only when
+  /// asked; can be sent again.
+  Future<Repair> sendChargeSms(String repairId) async {
+    final response = await api.post('/api/maintenance/$repairId/charge-sms');
 
     return Repair.fromJson(response['data'] as Json);
   }
