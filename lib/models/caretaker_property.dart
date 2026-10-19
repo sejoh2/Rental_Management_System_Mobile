@@ -12,6 +12,8 @@ class CaretakerProperty {
     required this.waterRatePerUnit,
     required this.canManageTenants,
     required this.canRecordPayments,
+    this.moveInBilling = 'prorated',
+    this.rentDueDay,
   });
 
   factory CaretakerProperty.fromJson(Json json) {
@@ -25,6 +27,8 @@ class CaretakerProperty {
       waterRatePerUnit: (json['water_rate_per_unit'] as num?)?.toDouble(),
       canManageTenants: json['can_manage_tenants'] == true,
       canRecordPayments: json['can_record_payments'] == true,
+      moveInBilling: json['move_in_billing'] as String? ?? 'prorated',
+      rentDueDay: (json['rent_due_day'] as num?)?.toInt(),
     );
   }
 
@@ -43,6 +47,13 @@ class CaretakerProperty {
 
   /// Turned on by the owner for this property.
   final bool canRecordPayments;
+
+  /// How the first month is billed when a tenant moves in mid-month:
+  /// prorated, full_month or free_until_next_month.
+  final String moveInBilling;
+
+  /// The day of the month rent is due.
+  final int? rentDueDay;
 
   int get vacantUnits => totalUnits - occupiedUnits;
 

@@ -1,5 +1,10 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/api_client.dart';
@@ -12,24 +17,43 @@ import '../models/app_file.dart';
 import '../utils/format.dart';
 import 'message_box.dart';
 
-/// A photo ready to upload.
+/// The server takes files up to 5 MB.
+const maxUploadBytes = 5 * 1024 * 1024;
+
+/// A photo or PDF ready to upload.
 class PickedPhoto {
   const PickedPhoto({
     required this.bytes,
     required this.contentType,
     required this.name,
+    this.label,
   });
 
   final List<int> bytes;
   final String contentType;
   final String name;
+
+  /// What it is ("Receipt"), sent with the upload; may be empty.
+  final String? label;
+
+  bool get isPdf => contentType == 'application/pdf';
+
+  PickedPhoto withLabel(String? label) => PickedPhoto(
+    bytes: bytes,
+    contentType: contentType,
+    name: name,
+    label: label,
+  );
 }
 
 /// Asks: camera or gallery? Then takes or chooses one photo, made smaller
 /// first (a phone photo is often over the 5 MB limit; 1600 px is plenty to
-/// read a meter or a receipt).
-Future<PickedPhoto?> pickPhoto(BuildContext context) async {
-  final source = await showModalBottomSheet<ImageSource>(
+/// read a meter or a receipt). With [allowPdf], a PDF can be chosen too.
+Future<PickedPhoto?> pickPhoto(
+  BuildContext context, {
+  bool allowPdf = false,
+}) async {
+  final source = await showModalBottomSheet<String>(
     context: context,
     showDragHandle: true,
     builder: (sheetContext) => SafeArea(
@@ -39,13 +63,19 @@ Future<PickedPhoto?> pickPhoto(BuildContext context) async {
           ListTile(
             leading: const Icon(Icons.photo_camera_outlined),
             title: const Text('Take a photo'),
-            onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+            onTap: () => Navigator.pop(sheetContext, 'camera'),
           ),
           ListTile(
             leading: const Icon(Icons.photo_library_outlined),
             title: const Text('Choose from gallery'),
-            onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+            onTap: () => Navigator.pop(sheetContext, 'gallery'),
           ),
+          if (allowPdf)
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf_outlined),
+              title: const Text('Choose a PDF'),
+              onTap: () => Navigator.pop(sheetContext, 'pdf'),
+            ),
           const SizedBox(height: AppSpace.sm),
         ],
       ),
@@ -54,8 +84,23 @@ Future<PickedPhoto?> pickPhoto(BuildContext context) async {
 
   if (source == null) return null;
 
+  if (source == 'pdf') {
+    final file = await FilePicker.pickFile(
+      type: FileType.custom,
+      allowedExtensions: const ['pdf'],
+    );
+
+    if (file == null) return null;
+
+    return PickedPhoto(
+      bytes: await file.xFile.readAsBytes(),
+      contentType: 'application/pdf',
+      name: file.name,
+    );
+  }
+
   final file = await ImagePicker().pickImage(
-    source: source,
+    source: source == 'camera' ? ImageSource.camera : ImageSource.gallery,
     maxWidth: 1600,
     maxHeight: 1600,
     imageQuality: 82,
@@ -78,6 +123,55 @@ Future<PickedPhoto?> pickPhoto(BuildContext context) async {
     contentType: contentType,
     name: name,
   );
+}
+
+/// Asks what the file is ("ID copy", "Receipt"). Empty is allowed: the
+/// file's own name is shown then. Null when cancelled.
+Future<String?> askFileLabel(BuildContext context, {String? hint}) {
+  final controller = TextEditingController();
+
+  return showDialog<String>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('What is it?'),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        maxLength: 120,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: InputDecoration(
+          labelText: 'Description (optional)',
+          hintText: hint == null ? null : 'e.g. $hint',
+        ),
+        onSubmitted: (value) => Navigator.pop(dialogContext, value.trim()),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
+          child: const Text('Upload'),
+        ),
+      ],
+    ),
+  ).whenComplete(controller.dispose);
+}
+
+/// Saves a PDF on the phone (in the app's own space) and opens it in the
+/// phone's PDF viewer, from where it can be shared or printed.
+Future<void> openPdf(List<int> bytes, String name) async {
+  final folder = await getTemporaryDirectory();
+  final file = File('${folder.path}${Platform.pathSeparator}$name.pdf');
+
+  await file.writeAsBytes(bytes, flush: true);
+
+  final result = await OpenFilex.open(file.path, type: 'application/pdf');
+
+  if (result.type != ResultType.done) {
+    throw Exception(result.message);
+  }
 }
 
 /// Opens a file: a photo inside the app, a PDF in the phone's PDF viewer.
@@ -153,15 +247,17 @@ class _PhotoViewer extends StatelessWidget {
   }
 }
 
-/// The files attached to one record, with a button to add a photo.
-/// Deleting a file is left to the owner, on the web.
+/// The files attached to one record, with a button to add a photo or a
+/// PDF, and what it is ("ID copy"), as on the web. Deleting a file is left
+/// to the owner, on the web.
 class AttachmentsSection extends StatefulWidget {
   const AttachmentsSection({
     super.key,
     required this.kind,
     required this.targetId,
     required this.emptyText,
-    this.addLabel = 'Add a photo',
+    this.addLabel = 'Add a photo or PDF',
+    this.labelHint,
     this.canAdd = true,
   });
 
@@ -169,6 +265,9 @@ class AttachmentsSection extends StatefulWidget {
   final String targetId;
   final String emptyText;
   final String addLabel;
+
+  /// An example description: "ID copy", "Receipt".
+  final String? labelHint;
   final bool canAdd;
 
   @override
@@ -205,9 +304,22 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
   }
 
   Future<void> _add() async {
-    final photo = await pickPhoto(context);
+    final picked = await pickPhoto(
+      context,
+      // A meter photo is a photo; documents and receipts may be PDFs.
+      allowPdf: widget.kind != FileKind.meterPhoto,
+    );
 
-    if (photo == null || !mounted) return;
+    if (picked == null || !mounted) return;
+
+    if (picked.bytes.length > maxUploadBytes) {
+      setState(() => _error = 'That file is over 5 MB. Choose a smaller one.');
+      return;
+    }
+
+    final label = await askFileLabel(context, hint: widget.labelHint);
+
+    if (label == null || !mounted) return;
 
     setState(() {
       _uploading = true;
@@ -218,9 +330,10 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
       await _repository.upload(
         widget.kind,
         widget.targetId,
-        bytes: photo.bytes,
-        contentType: photo.contentType,
-        name: photo.name,
+        bytes: picked.bytes,
+        contentType: picked.contentType,
+        name: picked.name,
+        label: label,
         saveKey: ApiClient.newSaveKey(),
       );
 
@@ -267,6 +380,7 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
             ),
             subtitle: Text(
               [
+                if (file.title != file.name) file.name,
                 file.sizeLabel,
                 if (file.createdAt != null) formatDay(file.createdAt!),
                 if (file.uploadedByName != null) file.uploadedByName!,
@@ -283,7 +397,7 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
           const SizedBox(height: AppSpace.sm),
           OutlinedButton.icon(
             onPressed: _uploading ? null : _add,
-            icon: const Icon(Icons.add_a_photo_outlined, size: 19),
+            icon: const Icon(Icons.attach_file, size: 19),
             label: Text(_uploading ? 'Uploading...' : widget.addLabel),
           ),
         ],

@@ -4,15 +4,12 @@ import 'package:go_router/go_router.dart';
 import '../core/app_scope.dart';
 import '../features/auth/name_page.dart';
 import '../features/auth/sign_in_page.dart';
-import '../features/expenses/electricity_page.dart';
 import '../features/expenses/expenses_page.dart';
 import '../features/home/home_page.dart';
 import '../features/landing/intro_page.dart';
 import '../features/landing/welcome_page.dart';
-import '../features/more/more_page.dart';
-import '../features/more/settings_page.dart';
+import '../features/profile/profile_page.dart';
 import '../features/repairs/repairs_page.dart';
-import '../features/tenants/tenants_page.dart';
 import '../features/units/units_tab.dart';
 import '../features/water/water_tab.dart';
 import '../widgets/message_box.dart';
@@ -22,7 +19,7 @@ import 'routes.dart';
 /// The app's pages and the rule for who may see which.
 GoRouter buildRouter(AppServices services) {
   return GoRouter(
-    initialLocation: Routes.home,
+    initialLocation: Routes.units,
     // Looks again at the rule whenever the session or the intro choice changes.
     refreshListenable: Listenable.merge([services.auth, services.preferences]),
     redirect: (context, state) => redirectFor(
@@ -30,6 +27,9 @@ GoRouter buildRouter(AppServices services) {
       user: services.auth.user,
       introSeen: services.preferences.introSeen,
       location: state.matchedLocation,
+      // A property chosen before: straight to its units. If it is no longer
+      // theirs, the tabs send them to Home (see PropertyGate).
+      propertyChosen: services.preferences.selectedPropertyId != null,
     ),
     routes: [
       GoRoute(
@@ -75,30 +75,24 @@ GoRouter buildRouter(AppServices services) {
           onAction: services.auth.signOut,
         ),
       ),
+      // Home: choosing the property. No tabs here; they belong to a property.
+      GoRoute(path: Routes.home, builder: (context, state) => const HomePage()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(shell: shell),
         branches: [
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: Routes.home,
-                builder: (context, state) => const HomePage(),
+                path: Routes.units,
+                builder: (context, state) => const UnitsTab(),
               ),
             ],
           ),
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: Routes.water,
-                builder: (context, state) => const WaterTab(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: Routes.tenants,
-                builder: (context, state) => const TenantsTab(),
+                path: Routes.expenses,
+                builder: (context, state) => const ExpensesTab(),
               ),
             ],
           ),
@@ -113,26 +107,16 @@ GoRouter buildRouter(AppServices services) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: Routes.more,
-                builder: (context, state) => const MorePage(),
-                routes: [
-                  GoRoute(
-                    path: 'units',
-                    builder: (context, state) => const UnitsTab(),
-                  ),
-                  GoRoute(
-                    path: 'expenses',
-                    builder: (context, state) => const ExpensesTab(),
-                  ),
-                  GoRoute(
-                    path: 'electricity',
-                    builder: (context, state) => const ElectricityTab(),
-                  ),
-                  GoRoute(
-                    path: 'settings',
-                    builder: (context, state) => const SettingsPage(),
-                  ),
-                ],
+                path: Routes.water,
+                builder: (context, state) => const WaterTab(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.profile,
+                builder: (context, state) => const ProfilePage(),
               ),
             ],
           ),

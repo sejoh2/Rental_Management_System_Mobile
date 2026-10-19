@@ -11,15 +11,15 @@ abstract final class Routes {
   static const name = '/name';
   static const notCaretaker = '/not-caretaker';
 
+  /// Choosing the property to work on: the one place to switch.
   static const home = '/home';
-  static const water = '/water';
-  static const tenants = '/tenants';
+
+  // The tabs, for the chosen property.
+  static const units = '/units';
+  static const expenses = '/expenses';
   static const repairs = '/repairs';
-  static const more = '/more';
-  static const units = '/more/units';
-  static const expenses = '/more/expenses';
-  static const electricity = '/more/electricity';
-  static const settings = '/more/settings';
+  static const water = '/water';
+  static const profile = '/profile';
 }
 
 const _signedOutPages = {Routes.welcome, Routes.intro, Routes.signIn};
@@ -39,12 +39,14 @@ const _gatePages = {
 /// - signed out: the welcome screen and intro the first time, sign-in after;
 /// - signed in as someone who is not a caretaker: an explanation;
 /// - signed in for the first time: the name step;
-/// - otherwise the app, never the sign-in pages.
+/// - otherwise the app, never the sign-in pages: the units of the property
+///   last worked on, or Home to choose one.
 String? redirectFor({
   required AuthStatus status,
   required AppUser? user,
   required bool introSeen,
   required String location,
+  bool propertyChosen = false,
 }) {
   switch (status) {
     case AuthStatus.starting:
@@ -67,6 +69,8 @@ String? redirectFor({
 
       if (user.needsName) return location == Routes.name ? null : Routes.name;
 
-      return _gatePages.contains(location) ? Routes.home : null;
+      if (!_gatePages.contains(location)) return null;
+
+      return propertyChosen ? Routes.units : Routes.home;
   }
 }

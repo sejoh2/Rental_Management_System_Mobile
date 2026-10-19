@@ -12,6 +12,7 @@ import '../../models/caretaker_property.dart';
 import '../../models/tenant.dart';
 import '../../utils/format.dart';
 import '../../widgets/attachments.dart';
+import '../../widgets/fields.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/message_box.dart';
 import '../../widgets/status_chip.dart';
@@ -92,6 +93,90 @@ class _TenantPageState extends State<TenantPage> {
     }
   }
 
+  bool _busy = false;
+
+  /// Records that the tenant said they are leaving, on the date chosen.
+  Future<void> _markNotice(Tenant tenant) async {
+    final date = await showModalBottomSheet<DateTime>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _NoticeSheet(tenant: tenant),
+    );
+
+    if (date == null || !mounted) return;
+
+    await _changeNotice(tenant, date, 'Notice recorded.');
+  }
+
+  Future<void> _cancelNotice(Tenant tenant) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancel the notice?'),
+        content: Text(
+          '${tenant.fullName} stays as a tenant, as if no notice was given.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep it'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Cancel notice'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    await _changeNotice(tenant, null, 'Notice cancelled.');
+  }
+
+  Future<void> _changeNotice(Tenant tenant, DateTime? date, String done) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    setState(() => _busy = true);
+
+    try {
+      await _repository.setNotice(tenant.id, date);
+      _changed = true;
+      messenger.showSnackBar(SnackBar(content: Text(done)));
+      await _load();
+    } on ApiException catch (failure) {
+      messenger.showSnackBar(SnackBar(content: Text(failure.message)));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// The statement for the period shown, as a PDF, opened in the phone's
+  /// PDF viewer (from there it can be shared or printed).
+  Future<void> _downloadStatement(Tenant tenant) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    setState(() => _busy = true);
+
+    try {
+      final bytes = await _repository.statementPdf(tenant.id, _period);
+      final name =
+          'statement-${tenant.unitNumber}-${tenant.fullName}-$_period'
+              .replaceAll(RegExp(r'[^A-Za-z0-9-]+'), '-');
+
+      await openPdf(bytes, name);
+    } on ApiException catch (failure) {
+      messenger.showSnackBar(SnackBar(content: Text(failure.message)));
+    } on Exception {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('The PDF could not be opened.')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _open(Widget page) async {
     final changed = await Navigator.of(
       context,
@@ -142,14 +227,35 @@ class _TenantPageState extends State<TenantPage> {
                   ),
                   children: [
                     _BalanceCard(tenant: tenant),
+                    // As on the web: nothing to record for someone who has left and owes nothing.
                     if (property.canRecordPayments &&
-                        tenant.status != 'inactive') ...[
+                        (tenant.isCurrent || tenant.owes)) ...[
                       const SizedBox(height: AppSpace.md),
                       FilledButton.icon(
                         onPressed: () =>
                             _open(RecordPaymentPage(tenant: tenant)),
                         icon: const Icon(Icons.payments_outlined),
                         label: const Text('Record a payment'),
+                      ),
+                    ],
+                    if (property.canManageTenants && tenant.isCurrent) ...[
+                      const SizedBox(height: AppSpace.sm),
+                      OutlinedButton.icon(
+                        onPressed: _busy
+                            ? null
+                            : () => tenant.status == 'notice_given'
+                                  ? _cancelNotice(tenant)
+                                  : _markNotice(tenant),
+                        icon: Icon(
+                          tenant.status == 'notice_given'
+                              ? Icons.undo
+                              : Icons.event_busy_outlined,
+                        ),
+                        label: Text(
+                          tenant.status == 'notice_given'
+                              ? 'Cancel notice'
+                              : 'Mark notice given',
+                        ),
                       ),
                     ],
                     const SectionLabel('Details'),
@@ -187,11 +293,38 @@ class _TenantPageState extends State<TenantPage> {
                               label: 'Moved in',
                               value: formatDay(tenant.moveInDate!),
                             ),
+                          if (tenant.status == 'notice_given' &&
+                              tenant.noticeDate != null)
+                            _DetailRow(
+                              icon: Icons.event_busy_outlined,
+                              label: 'Notice given',
+                              value: formatDay(tenant.noticeDate!),
+                            ),
                           if (tenant.moveOutDate != null)
                             _DetailRow(
                               icon: Icons.logout,
                               label: 'Moved out',
                               value: formatDay(tenant.moveOutDate!),
+                            ),
+                          _DetailRow(
+                            icon: Icons.savings_outlined,
+                            label: 'Rent deposit',
+                            value: tenant.rentDepositDue > 0
+                                ? formatKes(tenant.rentDepositDue)
+                                : 'None',
+                          ),
+                          _DetailRow(
+                            icon: Icons.water_drop_outlined,
+                            label: 'Water deposit',
+                            value: tenant.waterDepositDue > 0
+                                ? formatKes(tenant.waterDepositDue)
+                                : 'None',
+                          ),
+                          if ((tenant.waterPaymentReference ?? '').isNotEmpty)
+                            _DetailRow(
+                              icon: Icons.tag,
+                              label: 'Water M-Pesa account',
+                              value: tenant.waterPaymentReference!,
                             ),
                           if ((tenant.nationalId ?? '').isNotEmpty)
                             _DetailRow(
@@ -233,6 +366,14 @@ class _TenantPageState extends State<TenantPage> {
                       ),
                     ),
                     _StatementCard(statement: _statement),
+                    const SizedBox(height: AppSpace.sm),
+                    OutlinedButton.icon(
+                      onPressed: _busy ? null : () => _downloadStatement(tenant),
+                      icon: const Icon(Icons.picture_as_pdf_outlined),
+                      label: Text(
+                        'Statement PDF (${_periods[_period]!.toLowerCase()})',
+                      ),
+                    ),
                     if (property.canManageTenants) ...[
                       const SectionLabel('Documents'),
                       AppCard(
@@ -240,8 +381,9 @@ class _TenantPageState extends State<TenantPage> {
                           kind: FileKind.tenantDocument,
                           targetId: tenant.id,
                           emptyText:
-                              'No documents yet. Add a photo of the ID or the signed agreement.',
-                          addLabel: 'Add a document photo',
+                              'No documents yet. Add the ID copy or the signed agreement, as a photo or a PDF.',
+                          addLabel: 'Add a document',
+                          labelHint: 'ID copy',
                         ),
                       ),
                     ],
@@ -343,11 +485,14 @@ class _DetailRow extends StatelessWidget {
           children: [
             Icon(icon, size: 19, color: colors.inkFaint),
             const SizedBox(width: 12),
-            Text(
-              label,
-              style: AppText.small.copyWith(
-                color: colors.inkSoft,
-                fontSize: 13,
+            // Both may wrap: a long label never pushes the row off the screen.
+            Flexible(
+              child: Text(
+                label,
+                style: AppText.small.copyWith(
+                  color: colors.inkSoft,
+                  fontSize: 13,
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -508,4 +653,63 @@ class _StatementCard extends StatelessWidget {
     'bank' => 'Bank',
     _ => 'Other',
   };
+}
+
+/// The date the tenant gave notice, as on the web's "Mark notice given".
+class _NoticeSheet extends StatefulWidget {
+  const _NoticeSheet({required this.tenant});
+
+  final Tenant tenant;
+
+  @override
+  State<_NoticeSheet> createState() => _NoticeSheetState();
+}
+
+class _NoticeSheetState extends State<_NoticeSheet> {
+  DateTime _date = DateTime.now();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final tenant = widget.tenant;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpace.xl,
+          0,
+          AppSpace.xl,
+          AppSpace.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Mark notice given',
+              style: AppText.title.copyWith(color: colors.ink),
+            ),
+            const SizedBox(height: AppSpace.sm),
+            Text(
+              'Records that ${tenant.fullName} has given notice to leave House ${tenant.unitNumber}. '
+              'They stay a tenant and keep being billed until the owner moves them out.',
+              style: AppText.small.copyWith(color: colors.inkSoft, fontSize: 13),
+            ),
+            const SizedBox(height: AppSpace.lg),
+            DateField(
+              label: 'Date notice was given',
+              value: _date,
+              lastDate: DateTime.now(),
+              onChanged: (date) => setState(() => _date = date),
+            ),
+            const SizedBox(height: AppSpace.xl),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, _date),
+              child: const Text('Mark notice given'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

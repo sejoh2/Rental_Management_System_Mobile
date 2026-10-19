@@ -11,22 +11,50 @@ import '../../utils/format.dart';
 import '../../widgets/fields.dart';
 import '../../widgets/message_box.dart';
 
-const _methods = {
+/// The same words as the web's "Record manual payment".
+const paymentMethods = {
   'cash': 'Cash',
-  'mpesa': 'M-Pesa (to a personal number)',
-  'bank': 'Bank deposit',
+  'mpesa': 'M-Pesa',
+  'bank': 'Bank transfer',
   'other': 'Other',
 };
 
-const _accounts = {
-  'rent': 'Rent and deposits',
+const paymentAccounts = {
+  'rent': 'Rent',
   'water': 'Water',
   'electricity': 'Electricity',
   'service': 'Service charges',
 };
 
-/// Records money a tenant handed over in person. Shown only when the owner
-/// has allowed this caretaker to record payments in the property.
+/// What each choice of "Apply to" settles, as the web explains it.
+const paymentAccountHints = {
+  'rent':
+      'Settles the rent deposit first, then rent. It also covers the water and electricity deposits '
+      'and bills, but only if this property has no separate account for them, and service charges '
+      'if the property has them paid into the rent account.',
+  'water':
+      'Settles the water deposit and water bills, and service charges if the property has them paid '
+      'into the water account.',
+  'electricity':
+      'Settles the electricity deposit and electricity bills, and service charges if the property has '
+      'them paid into the electricity account.',
+  'service':
+      'Settles service charges, such as garbage or security, and repairs charged to the tenant.',
+};
+
+/// When a payment was received: now for today (so the receipt shows the
+/// real time), midday for an earlier day. As on the web.
+DateTime receivedAtFor(DateTime day, DateTime now) {
+  final today = DateTime(now.year, now.month, now.day);
+
+  return DateTime(day.year, day.month, day.day) == today
+      ? now
+      : DateTime(day.year, day.month, day.day, 12);
+}
+
+/// Records cash, or any payment that did not come through M-Pesa
+/// matching. Shown only when the owner has allowed this caretaker to record
+/// payments in the property.
 class RecordPaymentPage extends StatefulWidget {
   const RecordPaymentPage({super.key, required this.tenant});
 
@@ -72,8 +100,9 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Record this payment?'),
         content: Text(
-          '${formatKes(amount)} from ${widget.tenant.fullName}, ${_methods[_method]!.toLowerCase()}, '
-          'on ${formatDay(_received)}. It is recorded under your name and the owner sees it.',
+          '${formatKes(amount)} from ${widget.tenant.fullName}, ${paymentMethods[_method]!.toLowerCase()}, '
+          'for ${paymentAccounts[_account]!.toLowerCase()}, on ${formatDay(_received)}. '
+          'It is recorded under your name and the owner sees it.',
         ),
         actions: [
           TextButton(
@@ -101,12 +130,7 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
         amount: amount,
         method: _method,
         accountFor: _account,
-        receivedAt: DateTime(
-          _received.year,
-          _received.month,
-          _received.day,
-          12,
-        ),
+        receivedAt: receivedAtFor(_received, DateTime.now()),
         reference: _reference.text.trim().isEmpty
             ? null
             : _reference.text.trim(),
@@ -148,28 +172,17 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
             'House ${tenant.unitNumber} · ${tenant.owes ? 'owes ${formatKes(tenant.balance)}' : 'nothing owed'}',
             style: AppText.small.copyWith(color: colors.inkSoft),
           ),
+          const SizedBox(height: AppSpace.md),
+          NoteBox(
+            'For cash, or any payment that didn’t come through M-Pesa auto-matching. '
+            'This is applied straight to ${tenant.fullName}’s balance for House ${tenant.unitNumber}, deposits first.',
+          ),
           const SizedBox(height: AppSpace.xl),
           AmountField(
             controller: _amount,
-            label: 'Amount received',
+            label: 'Amount',
             autofocus: true,
             onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: AppSpace.lg),
-          SelectField<String>(
-            label: 'How it was paid',
-            value: _method,
-            options: _methods,
-            onChanged: (value) => setState(() => _method = value ?? 'cash'),
-          ),
-          const SizedBox(height: AppSpace.lg),
-          SelectField<String>(
-            label: 'Paid towards',
-            value: _account,
-            options: _accounts,
-            helper:
-                'Applied to the tenant’s bills of this kind, as on the web; anything extra is kept as credit.',
-            onChanged: (value) => setState(() => _account = value ?? 'rent'),
           ),
           const SizedBox(height: AppSpace.lg),
           DateField(
@@ -179,19 +192,41 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
             onChanged: (date) => setState(() => _received = date),
           ),
           const SizedBox(height: AppSpace.lg),
+          SelectField<String>(
+            label: 'Payment method',
+            value: _method,
+            options: paymentMethods,
+            onChanged: (value) => setState(() => _method = value ?? 'cash'),
+          ),
+          const SizedBox(height: AppSpace.lg),
+          SelectField<String>(
+            label: 'Apply to',
+            value: _account,
+            options: paymentAccounts,
+            onChanged: (value) => setState(() => _account = value ?? 'rent'),
+          ),
+          const SizedBox(height: AppSpace.sm),
+          Text(
+            '${paymentAccountHints[_account]} Anything left over is kept as credit for the next bill.',
+            style: AppText.small.copyWith(color: colors.inkFaint),
+          ),
+          const SizedBox(height: AppSpace.lg),
           TextField(
             controller: _reference,
             textCapitalization: TextCapitalization.characters,
             decoration: const InputDecoration(
               labelText: 'Reference (optional)',
-              hintText: 'e.g. M-Pesa code or slip number',
+              hintText: 'e.g. receipt or transaction number',
             ),
           ),
           const SizedBox(height: AppSpace.lg),
           TextField(
             controller: _notes,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(labelText: 'Note (optional)'),
+            decoration: const InputDecoration(
+              labelText: 'Notes (optional)',
+              hintText: 'e.g. Paid in person at the office',
+            ),
           ),
           if (_error != null) ...[
             const SizedBox(height: AppSpace.lg),
@@ -200,7 +235,7 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
           const SizedBox(height: AppSpace.xl),
           FilledButton(
             onPressed: _value != null && !_saving ? _confirmAndSave : null,
-            child: Text(_saving ? 'Saving...' : 'Record payment'),
+            child: Text(_saving ? 'Recording...' : 'Record payment'),
           ),
         ],
       ),

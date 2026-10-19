@@ -14,6 +14,7 @@ import '../../widgets/attachments.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/message_box.dart';
 import '../../widgets/month_switcher.dart';
+import '../../widgets/notices_bell.dart';
 import '../../widgets/property_gate.dart';
 import '../../widgets/status_chip.dart';
 import 'expense_form_page.dart';
@@ -144,7 +145,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
                   kind: FileKind.expenseReceipt,
                   targetId: expense.id,
                   emptyText: 'No receipt yet.',
-                  addLabel: 'Add a receipt photo',
+                  addLabel: 'Add a receipt',
+                  labelHint: 'Receipt',
                   canAdd: !expense.isVoid,
                 ),
               ],
@@ -169,6 +171,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Expenses'),
+        actions: const [NoticesBell()],
         bottom: const PropertyStrip(),
       ),
       floatingActionButton: FloatingActionButton.extended(

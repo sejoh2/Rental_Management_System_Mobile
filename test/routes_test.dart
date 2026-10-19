@@ -19,12 +19,14 @@ String? go(
   AuthStatus status, {
   AppUser? who,
   bool introSeen = false,
+  bool propertyChosen = false,
 }) {
   return redirectFor(
     status: status,
     user: who,
     introSeen: introSeen,
     location: location,
+    propertyChosen: propertyChosen,
   );
 }
 
@@ -64,14 +66,14 @@ void main() {
         Routes.signIn,
       );
       expect(
-        go(Routes.settings, AuthStatus.signedOut, introSeen: true),
+        go(Routes.profile, AuthStatus.signedOut, introSeen: true),
         Routes.signIn,
       );
     });
   });
 
   group('signed in', () {
-    test('a caretaker goes from the sign-in pages to Home', () {
+    test('with no property chosen yet: Home, to choose one', () {
       expect(go(Routes.signIn, AuthStatus.signedIn, who: user()), Routes.home);
       expect(go(Routes.welcome, AuthStatus.signedIn, who: user()), Routes.home);
       expect(
@@ -80,17 +82,30 @@ void main() {
       );
     });
 
-    test('a caretaker can open any app page', () {
+    test('with a property chosen before: straight to its units', () {
+      expect(
+        go(
+          Routes.starting,
+          AuthStatus.signedIn,
+          who: user(),
+          propertyChosen: true,
+        ),
+        Routes.units,
+      );
+      expect(
+        go(Routes.signIn, AuthStatus.signedIn, who: user(), propertyChosen: true),
+        Routes.units,
+      );
+    });
+
+    test('a caretaker can open Home and every tab', () {
       for (final page in [
         Routes.home,
-        Routes.water,
-        Routes.tenants,
-        Routes.repairs,
-        Routes.more,
         Routes.units,
         Routes.expenses,
-        Routes.electricity,
-        Routes.settings,
+        Routes.repairs,
+        Routes.water,
+        Routes.profile,
       ]) {
         expect(
           go(page, AuthStatus.signedIn, who: user()),

@@ -11,6 +11,7 @@ import '../../models/repair.dart';
 import '../../utils/format.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/message_box.dart';
+import '../../widgets/notices_bell.dart';
 import '../../widgets/property_gate.dart';
 import '../../widgets/status_chip.dart';
 import 'repair_form_page.dart';
@@ -29,7 +30,7 @@ class RepairsTab extends StatelessWidget {
   }
 }
 
-enum _Filter { open, done, all }
+enum _Filter { open, mine, done, all }
 
 StatusChip repairStatusChip(Repair repair) => switch (repair.status) {
   'in_progress' => const StatusChip('In progress', tone: Tone.info),
@@ -84,31 +85,40 @@ class _RepairsPageState extends State<RepairsPage> {
   }
 
   Future<void> _open(Widget page) async {
-    final changed = await Navigator.of(
+    await Navigator.of(
       context,
     ).push<bool>(MaterialPageRoute(builder: (_) => page));
 
-    if (changed == true) _load();
+    // Always: opening a repair also clears its "new" mark.
+    _load();
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final me = AppScope.of(context).auth.user?.id;
     final repairs = _repairs;
     final shown = [
       for (final repair in repairs ?? const <Repair>[])
         if (switch (_filter) {
           _Filter.open => repair.isOpen,
+          _Filter.mine => repair.isOpen && repair.isFor(me),
           _Filter.done => !repair.isOpen,
           _Filter.all => true,
         })
           repair,
     ];
     final openCount = repairs?.where((repair) => repair.isOpen).length ?? 0;
+    final mineCount =
+        repairs
+            ?.where((repair) => repair.isOpen && repair.isFor(me))
+            .length ??
+        0;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Repairs'),
+        actions: const [NoticesBell()],
         bottom: const PropertyStrip(),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -139,6 +149,10 @@ class _RepairsPageState extends State<RepairsPage> {
                         _Filter.open,
                         repairs == null ? 'Open' : 'Open ($openCount)',
                       ),
+                      (
+                        _Filter.mine,
+                        repairs == null ? 'Mine' : 'Mine ($mineCount)',
+                      ),
                       (_Filter.done, 'Done or cancelled'),
                       (_Filter.all, 'All'),
                     ]) ...[
@@ -166,9 +180,13 @@ class _RepairsPageState extends State<RepairsPage> {
                   title: _filter == _Filter.open
                       ? 'Nothing waiting'
                       : 'Nothing here',
-                  message: _filter == _Filter.open
-                      ? 'No open repairs. Report one with the button below when something breaks.'
-                      : 'No repairs in this list.',
+                  message: switch (_filter) {
+                    _Filter.open =>
+                      'No open repairs. Report one with the button below when something breaks.',
+                    _Filter.mine =>
+                      'No open repair is given to you. Open a repair and tap "I’ll handle it" to take it on.',
+                    _ => 'No repairs in this list.',
+                  },
                 ),
               )
             else
@@ -204,6 +222,10 @@ class _RepairsPageState extends State<RepairsPage> {
                                   ),
                                 ),
                               ),
+                              if (repair.caretakerNotice != null) ...[
+                                const StatusChip('New', tone: Tone.accent),
+                                const SizedBox(width: 6),
+                              ],
                               repairStatusChip(repair),
                             ],
                           ),
@@ -223,11 +245,17 @@ class _RepairsPageState extends State<RepairsPage> {
                             ),
                           ),
                           if (priority != null ||
+                              repair.isFor(me) ||
                               repair.actualCost != null) ...[
                             const SizedBox(height: AppSpace.sm),
                             Row(
                               children: [
                                 ?priority,
+                                if (repair.isFor(me) && repair.isOpen) ...[
+                                  if (priority != null)
+                                    const SizedBox(width: 6),
+                                  const StatusChip('Yours', tone: Tone.info),
+                                ],
                                 const Spacer(),
                                 if (repair.actualCost != null)
                                   Text(

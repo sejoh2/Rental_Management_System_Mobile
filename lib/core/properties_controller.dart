@@ -28,6 +28,17 @@ class PropertiesController extends ChangeNotifier {
     return _byId[preferences.selectedPropertyId] ?? list.first;
   }
 
+  /// True once the caretaker has chosen a property that is still theirs
+  /// (or they have only one). False sends them to Home to choose.
+  bool get hasChosen {
+    final list = properties;
+
+    if (list == null || list.isEmpty) return false;
+    if (list.length == 1) return true;
+
+    return _byId.containsKey(preferences.selectedPropertyId);
+  }
+
   Future<void> load() async {
     loading = true;
     error = null;

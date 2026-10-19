@@ -1,5 +1,6 @@
 import '../core/api_client.dart';
 import '../models/tenant.dart';
+import '../utils/format.dart';
 
 /// The server calls for tenants, their statements and payments.
 class TenantRepository {
@@ -68,6 +69,27 @@ class TenantRepository {
     );
 
     return Tenant.fromJson(response['data'] as Json);
+  }
+
+  /// The tenant has said they are leaving ([date]), or, with null, has
+  /// changed their mind. They stay a tenant until the owner moves them out.
+  Future<Tenant> setNotice(String tenantId, DateTime? date) async {
+    final response = await api.patch(
+      '/api/tenants/$tenantId',
+      body: date == null
+          ? {'status': 'active', 'notice_date': null}
+          : {'status': 'notice_given', 'notice_date': dayKey(date)},
+    );
+
+    return Tenant.fromJson(response['data'] as Json);
+  }
+
+  /// The statement as a PDF, as the owner downloads it on the web.
+  Future<List<int>> statementPdf(String tenantId, String period) {
+    return api.download(
+      '/api/reports/tenants/$tenantId/statement/download',
+      query: {'period': period},
+    );
   }
 
   /// period: this_month, last_month, last_3_months, last_6_months or this_year.
