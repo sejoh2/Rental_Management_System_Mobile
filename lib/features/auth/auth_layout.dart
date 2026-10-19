@@ -50,7 +50,8 @@ class AuthLayout extends StatelessWidget {
                     ),
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
-                        minHeight: half -
+                        minHeight:
+                            half -
                             MediaQuery.paddingOf(context).top -
                             AppSpace.md -
                             AppSpace.xxl,
@@ -76,7 +77,10 @@ class AuthLayout extends StatelessWidget {
                                         tooltip: 'Back',
                                       ),
                               ),
-                              const BrandLockup(onDark: true, caption: 'Caretaker app'),
+                              const BrandLockup(
+                                onDark: true,
+                                caption: 'Caretaker app',
+                              ),
                             ],
                           ),
                           // Bottom of the panel: what this step is.

@@ -69,7 +69,9 @@ class _CodeBoxesState extends State<CodeBoxes> {
     final colors = AppColors.of(context);
     final code = widget.controller.text;
     // The box the next digit goes in (the last one once all are filled).
-    final current = code.length < widget.length ? code.length : widget.length - 1;
+    final current = code.length < widget.length
+        ? code.length
+        : widget.length - 1;
 
     return Semantics(
       label: 'Sign-in code, ${widget.length} digits',
@@ -117,7 +119,8 @@ class _CodeBoxesState extends State<CodeBoxes> {
                   onChanged: (value) {
                     widget.onChanged?.call(value);
 
-                    if (value.length == widget.length) widget.onCompleted?.call(value);
+                    if (value.length == widget.length)
+                      widget.onCompleted?.call(value);
                   },
                 ),
               ),
