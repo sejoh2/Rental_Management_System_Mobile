@@ -119,8 +119,9 @@ class _CodeBoxesState extends State<CodeBoxes> {
                   onChanged: (value) {
                     widget.onChanged?.call(value);
 
-                    if (value.length == widget.length)
+                    if (value.length == widget.length) {
                       widget.onCompleted?.call(value);
+                    }
                   },
                 ),
               ),

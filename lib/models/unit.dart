@@ -103,8 +103,9 @@ class Unit {
 
   /// "Typed in each month", "Fixed KES 1,000 a month with rent", "Not billed".
   String get electricityLabel {
-    if (electricityBillingMethod == 'entered')
+    if (electricityBillingMethod == 'entered') {
       return 'Amount typed in each month';
+    }
 
     final charge = electricityMonthlyCharge;
 
