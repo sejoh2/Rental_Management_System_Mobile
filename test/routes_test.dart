@@ -93,7 +93,12 @@ void main() {
         Routes.units,
       );
       expect(
-        go(Routes.signIn, AuthStatus.signedIn, who: user(), propertyChosen: true),
+        go(
+          Routes.signIn,
+          AuthStatus.signedIn,
+          who: user(),
+          propertyChosen: true,
+        ),
         Routes.units,
       );
     });

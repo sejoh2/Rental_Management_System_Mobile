@@ -115,11 +115,8 @@ class _RepairFormPageState extends State<RepairFormPage> {
   }
 
   /// The tenant living in the chosen unit, if any: only they can be charged.
-  String? get _tenantName => _units
-      ?.where((unit) => unit.id == _unitId)
-      .firstOrNull
-      ?.tenant
-      ?.fullName;
+  String? get _tenantName =>
+      _units?.where((unit) => unit.id == _unitId).firstOrNull?.tenant?.fullName;
 
   @override
   Widget build(BuildContext context) {

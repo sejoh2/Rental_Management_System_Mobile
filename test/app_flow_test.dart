@@ -287,7 +287,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Units, with the read-only banner and the bell.
-      expect(find.textContaining('read-only until the owner pays'), findsOneWidget);
+      expect(
+        find.textContaining('read-only until the owner pays'),
+        findsOneWidget,
+      );
       expect(find.text('Grace Wanjiru'), findsOneWidget);
       expect(find.text('Former tenants'), findsOneWidget);
       expect(find.text('Change'), findsOneWidget);
@@ -342,7 +345,10 @@ void main() {
       await tester.tap(find.text('Record a payment'));
       await tester.pumpAndSettle();
       expect(find.text('Apply to'), findsOneWidget);
-      expect(find.textContaining('kept as credit for the next bill'), findsOneWidget);
+      expect(
+        find.textContaining('kept as credit for the next bill'),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
       await tester.pageBack();
       await tester.pumpAndSettle();
@@ -370,7 +376,11 @@ void main() {
       // (480), with no empty gap above it.
       expect(tester.getBottomLeft(form).dy, closeTo(480, 1));
       expect(tester.getSize(form).height, greaterThan(200));
-      expect(find.text('Profile'), findsNothing, reason: 'tabs hidden while typing');
+      expect(
+        find.text('Profile'),
+        findsNothing,
+        reason: 'tabs hidden while typing',
+      );
       tester.view.resetViewInsets();
       await tester.pumpAndSettle();
       expect(find.text('Due at move-in for House A2'), findsOneWidget);

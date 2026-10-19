@@ -263,7 +263,9 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
               onPressed: _saving || _savedWithoutReceipt ? null : _addReceipt,
               icon: const Icon(Icons.attach_file, size: 19),
               label: Text(
-                _receipts.isEmpty ? 'Add a receipt (photo or PDF)' : 'Add another',
+                _receipts.isEmpty
+                    ? 'Add a receipt (photo or PDF)'
+                    : 'Add another',
               ),
             ),
             if (_error != null) ...[

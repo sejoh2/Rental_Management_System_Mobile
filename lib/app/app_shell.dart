@@ -38,48 +38,50 @@ class AppShell extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: typing ? null : DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(color: Theme.of(context).dividerTheme.color!),
-          ),
-        ),
-        child: NavigationBar(
-          selectedIndex: shell.currentIndex,
-          // Tapping the tab you are on returns to its first page.
-          onDestinationSelected: (index) => shell.goBranch(
-            index,
-            initialLocation: index == shell.currentIndex,
-          ),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.door_front_door_outlined),
-              selectedIcon: Icon(Icons.door_front_door),
-              label: 'Units',
+      bottomNavigationBar: typing
+          ? null
+          : DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: Theme.of(context).dividerTheme.color!),
+                ),
+              ),
+              child: NavigationBar(
+                selectedIndex: shell.currentIndex,
+                // Tapping the tab you are on returns to its first page.
+                onDestinationSelected: (index) => shell.goBranch(
+                  index,
+                  initialLocation: index == shell.currentIndex,
+                ),
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.door_front_door_outlined),
+                    selectedIcon: Icon(Icons.door_front_door),
+                    label: 'Units',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.receipt_long_outlined),
+                    selectedIcon: Icon(Icons.receipt_long),
+                    label: 'Expenses',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.build_outlined),
+                    selectedIcon: Icon(Icons.build),
+                    label: 'Repairs',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.water_drop_outlined),
+                    selectedIcon: Icon(Icons.water_drop),
+                    label: 'Water & Power',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.person_outline),
+                    selectedIcon: Icon(Icons.person),
+                    label: 'Profile',
+                  ),
+                ],
+              ),
             ),
-            NavigationDestination(
-              icon: Icon(Icons.receipt_long_outlined),
-              selectedIcon: Icon(Icons.receipt_long),
-              label: 'Expenses',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.build_outlined),
-              selectedIcon: Icon(Icons.build),
-              label: 'Repairs',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.water_drop_outlined),
-              selectedIcon: Icon(Icons.water_drop),
-              label: 'Water & Power',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person),
-              label: 'Profile',
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

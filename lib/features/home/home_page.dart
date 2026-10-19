@@ -261,7 +261,10 @@ class _PropertyCardState extends State<_PropertyCard> {
           ),
           const SizedBox(height: 4),
           Text(
-            todo ?? (_failed ? 'Open to see this month’s work' : 'Checking this month...'),
+            todo ??
+                (_failed
+                    ? 'Open to see this month’s work'
+                    : 'Checking this month...'),
             style: AppText.label.copyWith(
               color:
                   summary != null &&

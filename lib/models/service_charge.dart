@@ -22,7 +22,8 @@ class ServiceCharge {
       status: json['status'] as String? ?? 'active',
       unitAmounts: {
         for (final row in json['unit_amounts'] as List? ?? const [])
-          '${(row as Json)['unit_id']}': (row['amount'] as num?)?.toDouble() ?? 0,
+          '${(row as Json)['unit_id']}':
+              (row['amount'] as num?)?.toDouble() ?? 0,
       },
     );
   }

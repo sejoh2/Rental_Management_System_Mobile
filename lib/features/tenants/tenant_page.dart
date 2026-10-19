@@ -161,9 +161,8 @@ class _TenantPageState extends State<TenantPage> {
 
     try {
       final bytes = await _repository.statementPdf(tenant.id, _period);
-      final name =
-          'statement-${tenant.unitNumber}-${tenant.fullName}-$_period'
-              .replaceAll(RegExp(r'[^A-Za-z0-9-]+'), '-');
+      final name = 'statement-${tenant.unitNumber}-${tenant.fullName}-$_period'
+          .replaceAll(RegExp(r'[^A-Za-z0-9-]+'), '-');
 
       await openPdf(bytes, name);
     } on ApiException catch (failure) {
@@ -368,7 +367,9 @@ class _TenantPageState extends State<TenantPage> {
                     _StatementCard(statement: _statement),
                     const SizedBox(height: AppSpace.sm),
                     OutlinedButton.icon(
-                      onPressed: _busy ? null : () => _downloadStatement(tenant),
+                      onPressed: _busy
+                          ? null
+                          : () => _downloadStatement(tenant),
                       icon: const Icon(Icons.picture_as_pdf_outlined),
                       label: Text(
                         'Statement PDF (${_periods[_period]!.toLowerCase()})',
@@ -693,7 +694,10 @@ class _NoticeSheetState extends State<_NoticeSheet> {
             Text(
               'Records that ${tenant.fullName} has given notice to leave House ${tenant.unitNumber}. '
               'They stay a tenant and keep being billed until the owner moves them out.',
-              style: AppText.small.copyWith(color: colors.inkSoft, fontSize: 13),
+              style: AppText.small.copyWith(
+                color: colors.inkSoft,
+                fontSize: 13,
+              ),
             ),
             const SizedBox(height: AppSpace.lg),
             DateField(

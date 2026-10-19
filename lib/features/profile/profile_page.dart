@@ -89,9 +89,7 @@ class ProfilePage extends StatelessWidget {
                       user.fullName.isEmpty
                           ? '?'
                           : user.fullName.characters.first.toUpperCase(),
-                      style: AppText.headline.copyWith(
-                        color: colors.accentInk,
-                      ),
+                      style: AppText.headline.copyWith(color: colors.accentInk),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -193,7 +191,8 @@ class ProfilePage extends StatelessWidget {
                 children: [
                   NavRow(
                     icon: Icons.call_outlined,
-                    title: 'Call ${owner.fullName.isEmpty ? 'the owner' : owner.fullName}',
+                    title:
+                        'Call ${owner.fullName.isEmpty ? 'the owner' : owner.fullName}',
                     subtitle: owner.phone,
                     onTap: () => launchUrl(Uri.parse('tel:${owner.phone}')),
                   ),

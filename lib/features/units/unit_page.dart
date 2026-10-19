@@ -262,7 +262,10 @@ class _Row extends StatelessWidget {
     final colors = AppColors.of(context);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpace.lg,
+        vertical: 12,
+      ),
       decoration: BoxDecoration(
         border: last
             ? null

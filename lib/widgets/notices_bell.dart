@@ -16,9 +16,9 @@ class NoticesBell extends StatelessWidget {
 
     return IconButton(
       tooltip: count == 0 ? 'Notifications' : '$count new',
-      onPressed: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => const NoticesPage()),
-      ),
+      onPressed: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const NoticesPage())),
       icon: Badge(
         isLabelVisible: count > 0,
         backgroundColor: colors.accent,

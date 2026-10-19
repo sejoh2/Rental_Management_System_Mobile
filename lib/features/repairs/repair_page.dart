@@ -214,7 +214,11 @@ class _RepairPageState extends State<RepairPage> {
                 const SizedBox(height: AppSpace.md),
                 NoteBox(
                   '${formatKes(repair.actualCost ?? 0)} was recorded as an expense'
-                  '${repair.tenantChargeId == null ? '. It is the owner’s cost.' : repair.chargeTiming == 'move_out' ? ' and charged to the tenant, to be deducted from their deposit at move-out.' : ' and charged to the tenant.'}',
+                  '${repair.tenantChargeId == null
+                      ? '. It is the owner’s cost.'
+                      : repair.chargeTiming == 'move_out'
+                      ? ' and charged to the tenant, to be deducted from their deposit at move-out.'
+                      : ' and charged to the tenant.'}',
                 ),
               ],
               if (repair.tenantChargeId != null) ...[
@@ -585,10 +589,7 @@ class _DoneSheetState extends State<_DoneSheet> with _Updating {
           SelectField<String>(
             label: 'Who pays for this repair',
             value: _payer,
-            options: {
-              'owner': 'Owner',
-              'tenant': 'Tenant ($tenantName)',
-            },
+            options: {'owner': 'Owner', 'tenant': 'Tenant ($tenantName)'},
             helper:
                 'Choose the tenant when they caused the damage. Normal wear is the owner’s cost.',
             onChanged: (value) => setState(() => _payer = value ?? 'owner'),
@@ -619,10 +620,7 @@ class _DoneSheetState extends State<_DoneSheet> with _Updating {
           ),
         ),
         const SizedBox(height: AppSpace.lg),
-        Text(
-          explained,
-          style: AppText.small.copyWith(color: colors.inkSoft),
-        ),
+        Text(explained, style: AppText.small.copyWith(color: colors.inkSoft)),
         if (error != null) ...[
           const SizedBox(height: AppSpace.lg),
           ErrorBox(error!),

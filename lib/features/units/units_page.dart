@@ -161,10 +161,8 @@ class _UnitsPageState extends State<UnitsPage> {
           : null,
       body: RefreshIndicator(
         // Also looks again for properties the owner has just added.
-        onRefresh: () => Future.wait([
-          _load(),
-          AppScope.read(context).properties.load(),
-        ]),
+        onRefresh: () =>
+            Future.wait([_load(), AppScope.read(context).properties.load()]),
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
@@ -207,8 +205,14 @@ class _UnitsPageState extends State<UnitsPage> {
                     for (final (filter, label) in [
                       (UnitFilter.all, 'All'),
                       (UnitFilter.occupied, 'Occupied'),
-                      (UnitFilter.vacant, units == null ? 'Vacant' : 'Vacant ($vacant)'),
-                      (UnitFilter.owing, units == null ? 'Owing' : 'Owing ($owing)'),
+                      (
+                        UnitFilter.vacant,
+                        units == null ? 'Vacant' : 'Vacant ($vacant)',
+                      ),
+                      (
+                        UnitFilter.owing,
+                        units == null ? 'Owing' : 'Owing ($owing)',
+                      ),
                       (UnitFilter.former, 'Former tenants'),
                     ]) ...[
                       ChoiceChip(

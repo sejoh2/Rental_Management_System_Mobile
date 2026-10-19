@@ -68,8 +68,11 @@ void main() {
 
     test('free until next month: nothing for the move-in month', () {
       expect(
-        moveInPart('free_until_next_month', DateTime(2026, 10, 21), 9000)
-            .amount,
+        moveInPart(
+          'free_until_next_month',
+          DateTime(2026, 10, 21),
+          9000,
+        ).amount,
         0,
       );
     });

@@ -110,9 +110,7 @@ class _RepairsPageState extends State<RepairsPage> {
     ];
     final openCount = repairs?.where((repair) => repair.isOpen).length ?? 0;
     final mineCount =
-        repairs
-            ?.where((repair) => repair.isOpen && repair.isFor(me))
-            .length ??
+        repairs?.where((repair) => repair.isOpen && repair.isFor(me)).length ??
         0;
 
     return Scaffold(
