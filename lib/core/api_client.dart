@@ -10,13 +10,24 @@ typedef Json = Map<String, dynamic>;
 
 /// Something the server refused, or a request that never reached it.
 class ApiException implements Exception {
-  const ApiException(this.message, {this.status, this.unreachable = false});
+  const ApiException(
+    this.message, {
+    this.status,
+    this.code,
+    this.unreachable = false,
+  });
 
   /// Ready to show to the user.
   final String message;
 
   /// The HTTP status, when the server answered.
   final int? status;
+
+  /// The server's name for the refusal, when it gave one:
+  /// "account_read_only" while the owner's Kodi bill is unpaid.
+  final String? code;
+
+  bool get accountReadOnly => code == 'account_read_only';
 
   /// True when there was no answer at all: no connection, or the server is down.
   final bool unreachable;
@@ -92,6 +103,27 @@ class ApiClient {
     return _request('PATCH', path, body: body ?? const {}, saveKey: saveKey);
   }
 
+  /// Called when the server refuses a change because the account is
+  /// read-only, so the banner can show at once.
+  void Function()? onReadOnly;
+
+  /// A file from the server (a statement PDF). -> its bytes.
+  Future<List<int>> download(String path, {Map<String, String>? query}) async {
+    final response = await _exchange(
+      'GET',
+      path,
+      query: query,
+      auth: true,
+      accept: '*/*',
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _fail(response);
+    }
+
+    return response.bodyBytes;
+  }
+
   /// Sends a file as the request body (a photo or a PDF), with what it
   /// belongs to in the address.
   Future<Json> upload(
@@ -121,6 +153,52 @@ class ApiClient {
     List<int>? bytes,
     String? contentType,
   }) async {
+    final response = await _exchange(
+      method,
+      path,
+      body: body,
+      query: query,
+      auth: auth,
+      saveKey: saveKey,
+      bytes: bytes,
+      contentType: contentType,
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _fail(response);
+    }
+
+    return _decode(response) ?? const {};
+  }
+
+  /// Turns a refusal into an [ApiException] with the server's words.
+  Never _fail(http.Response response) {
+    final payload = _decode(response);
+    final code = payload?['code'];
+    final failure = ApiException(
+      _errorMessage(payload, response.statusCode),
+      status: response.statusCode,
+      code: code is String ? code : null,
+    );
+
+    if (failure.accountReadOnly) onReadOnly?.call();
+
+    throw failure;
+  }
+
+  /// Sends a request with the session, renewing the session once if it
+  /// has run out.
+  Future<http.Response> _exchange(
+    String method,
+    String path, {
+    Object? body,
+    Map<String, String>? query,
+    bool auth = true,
+    String? saveKey,
+    List<int>? bytes,
+    String? contentType,
+    String accept = 'application/json',
+  }) async {
     var response = await _send(
       method,
       path,
@@ -130,6 +208,7 @@ class ApiClient {
       saveKey: saveKey,
       bytes: bytes,
       contentType: contentType,
+      accept: accept,
     );
 
     if (response.statusCode == 401 && auth) {
@@ -152,19 +231,11 @@ class ApiClient {
         saveKey: saveKey,
         bytes: bytes,
         contentType: contentType,
+        accept: accept,
       );
     }
 
-    final payload = _decode(response);
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException(
-        _errorMessage(payload, response.statusCode),
-        status: response.statusCode,
-      );
-    }
-
-    return payload ?? const {};
+    return response;
   }
 
   Future<http.Response> _send(
@@ -176,6 +247,7 @@ class ApiClient {
     String? saveKey,
     List<int>? bytes,
     String? contentType,
+    String accept = 'application/json',
   }) async {
     final uri = Uri.parse(
       '$baseUrl$path',
@@ -183,7 +255,7 @@ class ApiClient {
 
     final request = http.Request(method, uri);
 
-    request.headers['Accept'] = 'application/json';
+    request.headers['Accept'] = accept;
 
     if (bytes != null) {
       request.headers['Content-Type'] =

@@ -10,27 +10,36 @@ import '../../models/caretaker_property.dart';
 import '../../models/electricity_bill.dart';
 import '../../utils/format.dart';
 import '../../widgets/cards.dart';
-import '../../widgets/fields.dart';
 import '../../widgets/message_box.dart';
 import '../../widgets/month_switcher.dart';
-import '../../widgets/property_gate.dart';
 import '../../widgets/status_chip.dart';
 
-/// Electricity bills, opened from More, for the property being worked on.
-class ElectricityTab extends StatelessWidget {
-  const ElectricityTab({super.key});
+/// The amounts to save: what was typed, where it differs from the bill
+/// already entered. As on the web, an empty box leaves the bill as it is;
+/// 0 removes a bill that has not been paid. Units without a tenant are not
+/// billed, so nothing typed for them is sent.
+Map<String, double> electricityChanges(
+  List<ElectricityBill> bills,
+  Map<String, String> typed,
+) {
+  final changes = <String, double>{};
 
-  @override
-  Widget build(BuildContext context) {
-    return PropertyGate(
-      builder: (context, property) =>
-          ElectricityPage(key: ValueKey(property.id), property: property),
-    );
+  for (final bill in bills) {
+    final text = (typed[bill.unitId] ?? '').trim();
+
+    if (text.isEmpty || bill.tenantId == null) continue;
+
+    final value = parseNumber(text);
+
+    if (value != null && value != bill.amount) changes[bill.unitId] = value;
   }
+
+  return changes;
 }
 
 /// Typing the month's electricity amount for each unit billed that way.
-/// Units billed a fixed amount, or not at all, are not listed.
+/// Units billed a fixed amount, or not at all, are not listed. Shown in the
+/// Water & Electricity tab.
 class ElectricityPage extends StatefulWidget {
   const ElectricityPage({super.key, required this.property});
 
@@ -83,15 +92,11 @@ class _ElectricityPageState extends State<ElectricityPage> {
       for (final field in _fields.values) {
         field.dispose();
       }
+      // Empty boxes: the amount entered before shows inside each one.
       _fields
         ..clear()
         ..addAll({
-          for (final bill in data.bills)
-            bill.unitId: TextEditingController(
-              text: bill.amount == null
-                  ? ''
-                  : formatNumber(bill.amount!).replaceAll(',', ''),
-            ),
+          for (final bill in data.bills) bill.unitId: TextEditingController(),
         });
 
       setState(() => _data = data);
@@ -108,21 +113,10 @@ class _ElectricityPageState extends State<ElectricityPage> {
     _load();
   }
 
-  /// The amounts that differ from what is saved.
-  Map<String, double> _changes() {
-    final changes = <String, double>{};
-
-    for (final bill in _data?.bills ?? const <ElectricityBill>[]) {
-      final typed = _fields[bill.unitId]?.text ?? '';
-      final value = typed.trim().isEmpty ? 0.0 : parseNumber(typed);
-
-      if (value != null && value != (bill.amount ?? 0)) {
-        changes[bill.unitId] = value;
-      }
-    }
-
-    return changes;
-  }
+  Map<String, double> _changes() => electricityChanges(
+    _data?.bills ?? const <ElectricityBill>[],
+    {for (final entry in _fields.entries) entry.key: entry.value.text},
+  );
 
   Future<void> _save() async {
     final changes = _changes();
@@ -161,10 +155,6 @@ class _ElectricityPageState extends State<ElectricityPage> {
     final changed = data == null ? 0 : _changes().length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Electricity bills'),
-        bottom: const PropertyStrip(),
-      ),
       bottomNavigationBar: data == null || data.bills.isEmpty
           ? null
           : SafeArea(
@@ -216,8 +206,10 @@ class _ElectricityPageState extends State<ElectricityPage> {
                         'Units with a fixed amount are billed with rent.',
                   )
                 else if (data != null) ...[
-                  const NoteBox(
-                    'Type each unit’s amount for the month. Leaving it empty, or 0, removes a bill not paid yet.',
+                  NoteBox(
+                    'Type what each unit owes for electricity in ${monthLabel(_month)}. The tenant living there '
+                    'is billed exactly that amount. To correct a bill, type the new amount; type 0 to remove a '
+                    'bill that has not been paid. An empty box leaves the bill as it is.',
                   ),
                   const SizedBox(height: AppSpace.md),
                   for (final bill in data.bills) ...[
@@ -235,11 +227,18 @@ class _ElectricityPageState extends State<ElectricityPage> {
                                   ),
                                 ),
                                 Text(
-                                  bill.tenantName ?? 'No tenant',
+                                  bill.tenantName ?? 'Vacant - not billed',
                                   style: AppText.small.copyWith(
                                     color: colors.inkSoft,
                                   ),
                                 ),
+                                if (bill.amount != null)
+                                  Text(
+                                    'Billed ${formatKes(bill.amount!)}',
+                                    style: AppText.small.copyWith(
+                                      color: colors.inkFaint,
+                                    ),
+                                  ),
                                 if (bill.status != null) ...[
                                   const SizedBox(height: 6),
                                   switch (bill.status) {
@@ -263,9 +262,26 @@ class _ElectricityPageState extends State<ElectricityPage> {
                           const SizedBox(width: AppSpace.md),
                           SizedBox(
                             width: 150,
-                            child: AmountField(
+                            child: TextField(
                               controller: _fields[bill.unitId]!,
-                              label: 'Amount',
+                              enabled: bill.tenantId != null,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              style: AppText.amount.copyWith(
+                                color: colors.ink,
+                                fontSize: 16,
+                              ),
+                              decoration: InputDecoration(
+                                labelText: bill.amount == null
+                                    ? 'Amount'
+                                    : 'New amount',
+                                hintText: bill.amount == null
+                                    ? null
+                                    : formatNumber(bill.amount!),
+                                prefixText: 'KES ',
+                              ),
                               onChanged: (_) => setState(() {}),
                             ),
                           ),

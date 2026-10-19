@@ -32,6 +32,10 @@ class _RepairFormPageState extends State<RepairFormPage> {
   String _unitId = '';
   String _category = 'plumbing';
   String _priority = 'normal';
+
+  /// Who pays: owner or tenant. Nothing is charged until it is done with a cost.
+  String _payer = 'owner';
+  String _timing = 'now';
   List<Unit>? _units;
   bool _saving = false;
   String? _error;
@@ -87,6 +91,8 @@ class _RepairFormPageState extends State<RepairFormPage> {
         category: _category,
         priority: _priority,
         unitId: _unitId.isEmpty ? null : _unitId,
+        chargeToTenant: _tenantName != null && _payer == 'tenant',
+        chargeTiming: _timing,
         saveKey: _saveKey,
       );
 
@@ -108,9 +114,14 @@ class _RepairFormPageState extends State<RepairFormPage> {
     }
   }
 
+  /// The tenant living in the chosen unit, if any: only they can be charged.
+  String? get _tenantName =>
+      _units?.where((unit) => unit.id == _unitId).firstOrNull?.tenant?.fullName;
+
   @override
   Widget build(BuildContext context) {
     final units = _units;
+    final tenantName = _tenantName;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Report a repair')),
@@ -162,6 +173,26 @@ class _RepairFormPageState extends State<RepairFormPage> {
             },
             onChanged: (value) => setState(() => _priority = value ?? 'normal'),
           ),
+          if (tenantName != null) ...[
+            const SizedBox(height: AppSpace.lg),
+            SelectField<String>(
+              label: 'Who pays for this repair',
+              value: _payer,
+              options: {'owner': 'Owner', 'tenant': 'Tenant ($tenantName)'},
+              helper:
+                  'Choose the tenant when they caused the damage. Nothing is charged until it is done with a cost.',
+              onChanged: (value) => setState(() => _payer = value ?? 'owner'),
+            ),
+            if (_payer == 'tenant') ...[
+              const SizedBox(height: AppSpace.lg),
+              SelectField<String>(
+                label: 'How the tenant pays',
+                value: _timing,
+                options: RepairLabels.chargeTimings,
+                onChanged: (value) => setState(() => _timing = value ?? 'now'),
+              ),
+            ],
+          ],
           const SizedBox(height: AppSpace.lg),
           TextField(
             controller: _description,

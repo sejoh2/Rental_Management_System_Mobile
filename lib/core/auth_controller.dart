@@ -19,6 +19,10 @@ enum AuthStatus {
 class AuthController extends ChangeNotifier {
   AuthController({required this.api, required this.session}) {
     api.onSessionExpired = _expired;
+    // A change refused as read-only: look again, so the banner shows.
+    api.onReadOnly = () {
+      if (!readOnly) refresh();
+    };
   }
 
   final ApiClient api;
@@ -29,6 +33,13 @@ class AuthController extends ChangeNotifier {
 
   /// Why the server could not be reached, while [status] is unreachable.
   String? startError;
+
+  /// True while the owner's Kodi bill is unpaid past the grace days: the
+  /// caretaker can look at everything but change nothing.
+  bool readOnly = false;
+
+  /// The owner of the account, for "Call the owner".
+  OwnerContact? owner;
 
   /// Finds out who is signed in. Called when the app opens, and again from
   /// the "Try again" button when the server could not be reached.
@@ -47,7 +58,7 @@ class AuthController extends ChangeNotifier {
     try {
       final response = await api.get('/api/auth/me');
 
-      user = AppUser.fromJson(response['user'] as Json);
+      _read(response);
       _set(AuthStatus.signedIn);
     } on ApiException catch (error) {
       if (error.unreachable) {
@@ -59,6 +70,32 @@ class AuthController extends ChangeNotifier {
         _set(AuthStatus.signedOut);
       }
     }
+  }
+
+  /// Looks again at the account: the name, whether it is read-only, the
+  /// owner. Called every minute or so while the app is open. A failure is
+  /// ignored: the next look will do.
+  Future<void> refresh() async {
+    if (status != AuthStatus.signedIn) return;
+
+    try {
+      _read(await api.get('/api/auth/me'));
+      notifyListeners();
+    } on ApiException {
+      // Nothing to do.
+    }
+  }
+
+  void _read(Json response) {
+    user = AppUser.fromJson(response['user'] as Json);
+
+    final subscription = response['subscription'];
+    final contact = response['owner'];
+
+    readOnly = subscription is Map && subscription['read_only'] == true;
+    owner = contact is Map<String, dynamic>
+        ? OwnerContact.fromJson(contact)
+        : null;
   }
 
   /// Sends a sign-in code by SMS. -> seconds until another may be asked for.
@@ -86,6 +123,8 @@ class AuthController extends ChangeNotifier {
 
     user = AppUser.fromJson(response['user'] as Json);
     _set(AuthStatus.signedIn);
+    // Read-only state and the owner come with /me.
+    refresh();
   }
 
   /// Asked once, right after the first sign-in.
@@ -104,6 +143,8 @@ class AuthController extends ChangeNotifier {
 
     await session.clear();
     user = null;
+    owner = null;
+    readOnly = false;
     _set(AuthStatus.signedOut);
 
     if (refresh == null) return;
@@ -123,6 +164,8 @@ class AuthController extends ChangeNotifier {
 
   void _expired() {
     user = null;
+    owner = null;
+    readOnly = false;
     _set(AuthStatus.signedOut);
   }
 
@@ -130,4 +173,19 @@ class AuthController extends ChangeNotifier {
     status = next;
     notifyListeners();
   }
+}
+
+/// The owner who added this caretaker.
+class OwnerContact {
+  const OwnerContact({required this.fullName, required this.phone});
+
+  factory OwnerContact.fromJson(Json json) {
+    return OwnerContact(
+      fullName: (json['full_name'] as String?)?.trim() ?? '',
+      phone: (json['phone'] as String?)?.trim() ?? '',
+    );
+  }
+
+  final String fullName;
+  final String phone;
 }

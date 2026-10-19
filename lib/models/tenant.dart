@@ -28,6 +28,10 @@ class Tenant {
     required this.status,
     required this.balance,
     required this.creditBalance,
+    this.rentDepositDue = 0,
+    this.waterDepositDue = 0,
+    this.waterPaymentReference,
+    this.noticeDate,
   });
 
   factory Tenant.fromJson(Json json) {
@@ -46,6 +50,10 @@ class Tenant {
       status: json['status'] as String? ?? 'active',
       balance: _number(json['balance']),
       creditBalance: _number(json['credit_balance']),
+      rentDepositDue: _number(json['rent_deposit_due']),
+      waterDepositDue: _number(json['water_deposit_due']),
+      waterPaymentReference: json['water_payment_reference'] as String?,
+      noticeDate: parseDay(json['notice_date']),
     );
   }
 
@@ -69,6 +77,16 @@ class Tenant {
 
   /// Paid ahead, used for their next bills.
   final double creditBalance;
+
+  /// The deposits set when they moved in.
+  final double rentDepositDue;
+  final double waterDepositDue;
+
+  /// What they type as the account number when paying water by M-Pesa.
+  final String? waterPaymentReference;
+
+  /// When they said they are leaving, while their status is notice_given.
+  final DateTime? noticeDate;
 
   bool get isCurrent => status == 'active' || status == 'notice_given';
   bool get owes => balance > 0;

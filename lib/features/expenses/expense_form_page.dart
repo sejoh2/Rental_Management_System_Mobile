@@ -17,7 +17,7 @@ import '../../widgets/attachments.dart';
 import '../../widgets/fields.dart';
 import '../../widgets/message_box.dart';
 
-/// Adds money spent on the property, with photos of the receipts.
+/// Adds money spent on the property, with its receipts (photos or PDFs).
 class ExpenseFormPage extends StatefulWidget {
   const ExpenseFormPage({super.key, required this.property});
 
@@ -84,9 +84,23 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
   }
 
   Future<void> _addReceipt() async {
-    final photo = await pickPhoto(context);
+    final picked = await pickPhoto(context, allowPdf: true);
 
-    if (photo != null && mounted) setState(() => _receipts.add(photo));
+    if (picked == null || !mounted) return;
+
+    if (picked.bytes.length > maxUploadBytes) {
+      setState(() => _error = 'That file is over 5 MB. Choose a smaller one.');
+      return;
+    }
+
+    final label = await askFileLabel(context, hint: 'Receipt');
+
+    if (label != null && mounted) {
+      setState(() {
+        _error = null;
+        _receipts.add(picked.withLabel(label));
+      });
+    }
   }
 
   Future<void> _save() async {
@@ -127,6 +141,7 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
           bytes: receipt.bytes,
           contentType: receipt.contentType,
           name: receipt.name,
+          label: receipt.label,
           saveKey: ApiClient.newSaveKey(),
         );
       }
@@ -224,9 +239,14 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
             for (final (index, receipt) in _receipts.indexed)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.image_outlined, color: colors.inkSoft),
+                leading: Icon(
+                  receipt.isPdf
+                      ? Icons.picture_as_pdf_outlined
+                      : Icons.image_outlined,
+                  color: colors.inkSoft,
+                ),
                 title: Text(
-                  receipt.name,
+                  (receipt.label ?? '').isEmpty ? receipt.name : receipt.label!,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -241,9 +261,11 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
               ),
             OutlinedButton.icon(
               onPressed: _saving || _savedWithoutReceipt ? null : _addReceipt,
-              icon: const Icon(Icons.add_a_photo_outlined, size: 19),
+              icon: const Icon(Icons.attach_file, size: 19),
               label: Text(
-                _receipts.isEmpty ? 'Add a receipt photo' : 'Add another',
+                _receipts.isEmpty
+                    ? 'Add a receipt (photo or PDF)'
+                    : 'Add another',
               ),
             ),
             if (_error != null) ...[

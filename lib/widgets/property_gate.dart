@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../app/routes.dart';
 import '../core/app_scope.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_text.dart';
@@ -8,7 +10,9 @@ import '../models/caretaker_property.dart';
 import 'message_box.dart';
 
 /// Shows [builder] with the property being worked on, or what is in the way:
-/// the list still loading, a failure, or no property assigned yet.
+/// the list still loading, a failure, or no property assigned yet. When the
+/// property chosen before is no longer theirs and they have several, it
+/// sends them to Home to choose.
 class PropertyGate extends StatelessWidget {
   const PropertyGate({super.key, required this.builder});
 
@@ -45,13 +49,21 @@ class PropertyGate extends StatelessWidget {
       );
     }
 
+    if (!controller.hasChosen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) context.go(Routes.home);
+      });
+
+      return const Scaffold(body: LoadingView());
+    }
+
     return builder(context, controller.selected!);
   }
 }
 
 /// The property every tab is showing, under each screen's title. With more
-/// than one property, tapping it switches the whole app to another one.
-/// This is the one place to switch; no screen has its own property choice.
+/// than one property, tapping it goes back to Home to choose another: Home
+/// is the one place to switch.
 class PropertyStrip extends StatelessWidget implements PreferredSizeWidget {
   const PropertyStrip({super.key});
 
@@ -87,7 +99,7 @@ class PropertyStrip extends StatelessWidget implements PreferredSizeWidget {
           ),
           if (several) ...[
             Text(
-              'Switch',
+              'Change',
               style: AppText.small.copyWith(
                 color: colors.accentInk,
                 fontWeight: FontWeight.w700,
@@ -104,74 +116,9 @@ class PropertyStrip extends StatelessWidget implements PreferredSizeWidget {
       child: SizedBox(
         height: 40,
         child: several
-            ? InkWell(onTap: () => showPropertyPicker(context), child: content)
+            ? InkWell(onTap: () => context.go(Routes.home), child: content)
             : content,
       ),
     );
   }
-}
-
-/// Lets the caretaker choose which property to work on.
-Future<void> showPropertyPicker(BuildContext context) {
-  final controller = AppScope.read(context).properties;
-  final list = controller.properties ?? const <CaretakerProperty>[];
-  final selectedId = controller.selected?.id;
-
-  return showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    builder: (sheetContext) {
-      final colors = AppColors.of(sheetContext);
-
-      return SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpace.xl,
-                0,
-                AppSpace.xl,
-                AppSpace.sm,
-              ),
-              child: Text(
-                'Choose a property',
-                style: AppText.title.copyWith(color: colors.ink),
-              ),
-            ),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  for (final property in list)
-                    ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpace.xl,
-                        vertical: 2,
-                      ),
-                      title: Text(property.name),
-                      subtitle: Text(
-                        [
-                          if (property.location.isNotEmpty) property.location,
-                          '${property.totalUnits} units',
-                        ].join(' · '),
-                      ),
-                      trailing: property.id == selectedId
-                          ? Icon(Icons.check_circle, color: colors.accentInk)
-                          : null,
-                      onTap: () {
-                        controller.select(property);
-                        Navigator.pop(sheetContext);
-                      },
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpace.sm),
-          ],
-        ),
-      );
-    },
-  );
 }
