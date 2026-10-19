@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_scope.dart';
-import '../../core/app_theme.dart';
+import '../../core/theme/app_colors.dart';
 import '../../data/water_repository.dart';
+import '../../models/app_file.dart';
 import '../../models/caretaker_property.dart';
 import '../../models/unit.dart';
 import '../../models/water_reading.dart';
 import '../../utils/format.dart';
+import '../../widgets/attachments.dart';
 import '../../widgets/message_box.dart';
+import '../../widgets/property_gate.dart';
 import 'reading_forms.dart';
 import 'record_reading_page.dart';
 
@@ -146,7 +149,10 @@ class _WaterReadingsPageState extends State<WaterReadingsPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Water readings')),
+      appBar: AppBar(
+        title: const Text('Water readings'),
+        bottom: const PropertyStrip(),
+      ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: CustomScrollView(
@@ -288,9 +294,38 @@ class _WaterReadingsPageState extends State<WaterReadingsPage> {
     );
   }
 
+  /// The meter photos of a reading, and a way to add one.
+  void _showPhotos(WaterReading reading) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ReadingSummary(reading: reading),
+              const SizedBox(height: 12),
+              AttachmentsSection(
+                kind: FileKind.meterPhoto,
+                targetId: reading.id,
+                emptyText:
+                    'No meter photo yet. A photo settles any question about the bill later.',
+                addLabel: 'Add a meter photo',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// What can be done with a recorded reading.
   void _showActions(WaterReading reading, Unit? finalFor) {
     final actions = <(IconData, String, VoidCallback)>[
+      (Icons.photo_camera_outlined, 'Meter photos', () => _showPhotos(reading)),
       if (reading.isFlagged)
         (
           Icons.build_outlined,

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_scope.dart';
-import '../../core/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import '../../widgets/message_box.dart';
+import 'auth_layout.dart';
 
 /// Asked once, right after the first sign-in: the person's name.
 class NamePage extends StatefulWidget {
@@ -31,7 +32,7 @@ class _NamePageState extends State<NamePage> {
     });
 
     try {
-      await AppScope.of(context).auth.saveName(_name.text.trim());
+      await AppScope.read(context).auth.saveName(_name.text.trim());
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
     } finally {
@@ -41,66 +42,38 @@ class _NamePageState extends State<NamePage> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final ready = _name.text.trim().length >= 2;
+    final ready = _name.text.trim().length >= 2 && !_saving;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'What is your name?',
-                    style: TextStyle(
-                      color: colors.ink,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'It is shown beside the readings, repairs and payments you record.',
-                    style: TextStyle(
-                      color: colors.inkSoft,
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  TextField(
-                    controller: _name,
-                    autofocus: true,
-                    textCapitalization: TextCapitalization.words,
-                    autofillHints: const [AutofillHints.name],
-                    decoration: const InputDecoration(
-                      labelText: 'Full names',
-                      hintText: 'e.g. Mary Wanjiku',
-                    ),
-                    onChanged: (_) => setState(() {}),
-                    onSubmitted: (_) {
-                      if (ready && !_saving) _save();
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: ready && !_saving ? _save : null,
-                    child: Text(_saving ? 'Saving...' : 'Continue'),
-                  ),
-                  if (_error != null) ...[
-                    const SizedBox(height: 14),
-                    ErrorBox(_error!),
-                  ],
-                ],
-              ),
-            ),
+    return AuthLayout(
+      title: 'What is your name?',
+      subtitle:
+          'It is shown beside the readings, repairs and payments you record.',
+      children: [
+        TextField(
+          controller: _name,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          autofillHints: const [AutofillHints.name],
+          decoration: const InputDecoration(
+            labelText: 'Full names',
+            hintText: 'e.g. Mary Wanjiku',
+            prefixIcon: Icon(Icons.person_outline),
           ),
+          onChanged: (_) => setState(() {}),
+          onSubmitted: (_) {
+            if (ready) _save();
+          },
         ),
-      ),
+        const SizedBox(height: AppSpace.lg),
+        FilledButton(
+          onPressed: ready ? _save : null,
+          child: Text(_saving ? 'Saving...' : 'Continue'),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: AppSpace.lg),
+          ErrorBox(_error!),
+        ],
+      ],
     );
   }
 }

@@ -3,11 +3,14 @@ import 'package:flutter/services.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_scope.dart';
-import '../../core/app_theme.dart';
+import '../../core/theme/app_colors.dart';
+import '../../data/file_repository.dart';
 import '../../data/water_repository.dart';
+import '../../models/app_file.dart';
 import '../../models/caretaker_property.dart';
 import '../../models/unit.dart';
 import '../../utils/format.dart';
+import '../../widgets/attachments.dart';
 import '../../widgets/message_box.dart';
 
 /// Records one meter reading for the tenant living in a unit.
@@ -51,6 +54,9 @@ class _RecordReadingPageState extends State<RecordReadingPage> {
   String? _loadError;
 
   bool _saving = false;
+
+  /// The meter photo, sent once the reading is saved.
+  PickedPhoto? _photo;
   String? _error;
 
   @override
@@ -136,6 +142,35 @@ class _RecordReadingPageState extends State<RecordReadingPage> {
         finalReading: widget.finalReading,
         saveKey: _saveKey,
       );
+
+      if (!mounted) return;
+
+      // The meter photo goes with the reading once it is saved. A failed
+      // upload does not undo the reading; the photo can be added from the list.
+      final photo = _photo;
+
+      if (photo != null) {
+        try {
+          await FileRepository(AppScope.read(context).api).upload(
+            FileKind.meterPhoto,
+            reading.id,
+            bytes: photo.bytes,
+            contentType: photo.contentType,
+            name: photo.name,
+            saveKey: ApiClient.newSaveKey(),
+          );
+        } on ApiException catch (failure) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Reading saved, but the photo was not: ${failure.message}',
+                ),
+              ),
+            );
+          }
+        }
+      }
 
       if (!mounted) return;
 
@@ -307,6 +342,34 @@ class _RecordReadingPageState extends State<RecordReadingPage> {
               hintText: 'e.g. Meter glass cracked',
             ),
           ),
+          const SizedBox(height: 16),
+          if (_photo == null)
+            OutlinedButton.icon(
+              onPressed: _saving
+                  ? null
+                  : () async {
+                      final photo = await pickPhoto(context);
+                      if (photo != null && mounted) {
+                        setState(() => _photo = photo);
+                      }
+                    },
+              icon: const Icon(Icons.add_a_photo_outlined, size: 19),
+              label: const Text('Add a photo of the meter'),
+            )
+          else
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.image_outlined),
+              title: const Text('Meter photo ready'),
+              subtitle: Text(
+                '${(_photo!.bytes.length / 1024).round()} KB · sent with the reading',
+              ),
+              trailing: IconButton(
+                tooltip: 'Remove the photo',
+                icon: const Icon(Icons.close),
+                onPressed: _saving ? null : () => setState(() => _photo = null),
+              ),
+            ),
           if (_error != null) ...[
             const SizedBox(height: 16),
             ErrorBox(_error!),

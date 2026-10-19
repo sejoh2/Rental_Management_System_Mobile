@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_scope.dart';
-import '../../core/app_theme.dart';
+import '../../core/theme/app_colors.dart';
 import '../../data/water_repository.dart';
 import '../../models/caretaker_property.dart';
 import '../../models/unit.dart';
 import '../../utils/format.dart';
 import '../../widgets/message_box.dart';
 import '../../widgets/status_chip.dart';
+import '../../widgets/property_gate.dart';
 
 /// The units of a property, who lives in each, and what they owe.
 class UnitsPage extends StatefulWidget {
@@ -81,7 +82,7 @@ class _UnitsPageState extends State<UnitsPage> {
     final shown = units?.where(_matches).toList() ?? const <Unit>[];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Units')),
+      appBar: AppBar(title: const Text('Units'), bottom: const PropertyStrip()),
       body: RefreshIndicator(
         onRefresh: _load,
         child: CustomScrollView(

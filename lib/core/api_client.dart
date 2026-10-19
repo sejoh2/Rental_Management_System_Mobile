@@ -92,6 +92,25 @@ class ApiClient {
     return _request('PATCH', path, body: body ?? const {}, saveKey: saveKey);
   }
 
+  /// Sends a file as the request body (a photo or a PDF), with what it
+  /// belongs to in the address.
+  Future<Json> upload(
+    String path, {
+    required Map<String, String> query,
+    required List<int> bytes,
+    required String contentType,
+    String? saveKey,
+  }) {
+    return _request(
+      'POST',
+      path,
+      query: query,
+      bytes: bytes,
+      contentType: contentType,
+      saveKey: saveKey,
+    );
+  }
+
   Future<Json> _request(
     String method,
     String path, {
@@ -99,6 +118,8 @@ class ApiClient {
     Map<String, String>? query,
     bool auth = true,
     String? saveKey,
+    List<int>? bytes,
+    String? contentType,
   }) async {
     var response = await _send(
       method,
@@ -107,6 +128,8 @@ class ApiClient {
       query: query,
       auth: auth,
       saveKey: saveKey,
+      bytes: bytes,
+      contentType: contentType,
     );
 
     if (response.statusCode == 401 && auth) {
@@ -127,6 +150,8 @@ class ApiClient {
         query: query,
         auth: auth,
         saveKey: saveKey,
+        bytes: bytes,
+        contentType: contentType,
       );
     }
 
@@ -149,6 +174,8 @@ class ApiClient {
     Map<String, String>? query,
     required bool auth,
     String? saveKey,
+    List<int>? bytes,
+    String? contentType,
   }) async {
     final uri = Uri.parse(
       '$baseUrl$path',
@@ -158,7 +185,11 @@ class ApiClient {
 
     request.headers['Accept'] = 'application/json';
 
-    if (body != null) {
+    if (bytes != null) {
+      request.headers['Content-Type'] =
+          contentType ?? 'application/octet-stream';
+      request.bodyBytes = bytes;
+    } else if (body != null) {
       request.headers['Content-Type'] = 'application/json';
       request.body = jsonEncode(body);
     }
