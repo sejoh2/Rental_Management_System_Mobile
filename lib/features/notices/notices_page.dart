@@ -108,7 +108,7 @@ class _NoticesPageState extends State<NoticesPage> {
                   icon: Icons.notifications_none,
                   title: 'Nothing new',
                   message:
-                      'When the owner reports a repair, or gives one to you, it shows here.',
+                      'When the owner reports an issue, or assigns one to you, it shows here.',
                 ),
               ),
             for (final repair in items) ...[
@@ -129,8 +129,8 @@ class _NoticesPageState extends State<NoticesPage> {
                         children: [
                           Text(
                             repair.caretakerNotice == 'assigned'
-                                ? 'The owner gave you a repair'
-                                : 'The owner reported a repair',
+                                ? 'The owner assigned you a request'
+                                : 'The owner reported an issue',
                             style: AppText.small.copyWith(
                               color: colors.inkFaint,
                             ),
@@ -144,7 +144,7 @@ class _NoticesPageState extends State<NoticesPage> {
                           Text(
                             [
                               repair.unitNumber == null
-                                  ? 'Whole property'
+                                  ? 'Common area'
                                   : 'House ${repair.unitNumber}',
                               if (several && repair.propertyName != null)
                                 repair.propertyName!,

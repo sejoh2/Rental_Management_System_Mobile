@@ -219,8 +219,8 @@ class _PropertyCardState extends State<_PropertyCard> {
             if (summary.flaggedReadings > 0)
               '${summary.flaggedReadings} to fix',
             summary.openRepairs == 0
-                ? 'No open repairs'
-                : '${summary.openRepairs} open ${summary.openRepairs == 1 ? 'repair' : 'repairs'}',
+                ? 'No open maintenance'
+                : '${summary.openRepairs} open ${summary.openRepairs == 1 ? 'request' : 'requests'}',
           ].join(' · ');
 
     return AppCard(

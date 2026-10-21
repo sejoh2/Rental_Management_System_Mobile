@@ -397,7 +397,7 @@ void main() {
       expect(tester.takeException(), isNull);
 
       // Repairs: the new one, given to this caretaker.
-      await tester.tap(find.text('Repairs').last);
+      await tester.tap(find.text('Maintenance').last);
       await tester.pumpAndSettle();
       expect(find.text('Leaking kitchen tap'), findsOneWidget);
       expect(find.text('New'), findsOneWidget);
@@ -409,7 +409,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('You'), findsOneWidget);
       expect(find.text('I’ll handle it'), findsNothing);
-      await tester.tap(find.text('Mark as done'));
+      await tester.tap(find.text('Mark as resolved'));
       await tester.pumpAndSettle();
       expect(find.text('Actual cost (optional)'), findsOneWidget);
       expect(find.text('Who pays for this repair'), findsOneWidget);
@@ -441,7 +441,7 @@ void main() {
       expect(find.byTooltip('Notifications'), findsOneWidget);
       await tester.tap(find.byTooltip('Notifications'));
       await tester.pumpAndSettle();
-      expect(find.text('The owner gave you a repair'), findsOneWidget);
+      expect(find.text('The owner assigned you a request'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       services.notices.dispose();

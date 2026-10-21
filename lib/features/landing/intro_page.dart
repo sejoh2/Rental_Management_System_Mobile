@@ -26,9 +26,9 @@ const _slides = [
   ),
   _Slide(
     icon: Icons.build_outlined,
-    title: 'Repairs and expenses',
+    title: 'Maintenance and expenses',
     text:
-        'Report a repair the moment you see it, follow it to done, and add what you spent with a photo '
+        'Report an issue the moment you see it, follow it until it is resolved, and add what you spent with a photo '
         'of the receipt.',
   ),
   _Slide(

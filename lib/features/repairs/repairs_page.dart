@@ -17,7 +17,7 @@ import '../../widgets/status_chip.dart';
 import 'repair_form_page.dart';
 import 'repair_page.dart';
 
-/// The Repairs tab, for the property being worked on.
+/// The Maintenance tab, for the property being worked on.
 class RepairsTab extends StatelessWidget {
   const RepairsTab({super.key});
 
@@ -34,7 +34,7 @@ enum _Filter { open, mine, done, all }
 
 StatusChip repairStatusChip(Repair repair) => switch (repair.status) {
   'in_progress' => const StatusChip('In progress', tone: Tone.info),
-  'resolved' => const StatusChip('Done', tone: Tone.success),
+  'resolved' => const StatusChip('Resolved', tone: Tone.success),
   'cancelled' => const StatusChip('Cancelled'),
   _ => const StatusChip('Reported', tone: Tone.warning),
 };
@@ -115,7 +115,7 @@ class _RepairsPageState extends State<RepairsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Repairs'),
+        title: const Text('Maintenance'),
         actions: const [NoticesBell()],
         bottom: const PropertyStrip(),
       ),
@@ -124,7 +124,7 @@ class _RepairsPageState extends State<RepairsPage> {
         backgroundColor: colors.accent,
         foregroundColor: AppColors.onAccent,
         icon: const Icon(Icons.add),
-        label: const Text('Report a repair'),
+        label: const Text('Report issue'),
       ),
       body: RefreshIndicator(
         onRefresh: _load,
@@ -151,7 +151,7 @@ class _RepairsPageState extends State<RepairsPage> {
                         _Filter.mine,
                         repairs == null ? 'Mine' : 'Mine ($mineCount)',
                       ),
-                      (_Filter.done, 'Done or cancelled'),
+                      (_Filter.done, 'Resolved or cancelled'),
                       (_Filter.all, 'All'),
                     ]) ...[
                       ChoiceChip(
@@ -180,10 +180,10 @@ class _RepairsPageState extends State<RepairsPage> {
                       : 'Nothing here',
                   message: switch (_filter) {
                     _Filter.open =>
-                      'No open repairs. Report one with the button below when something breaks.',
+                      'No open maintenance requests. Report an issue with the button below when something breaks.',
                     _Filter.mine =>
-                      'No open repair is given to you. Open a repair and tap "I’ll handle it" to take it on.',
-                    _ => 'No repairs in this list.',
+                      'No open request is assigned to you. Open a request and tap "I’ll handle it" to take it on.',
+                    _ => 'No maintenance requests in this list.',
                   },
                 ),
               )
@@ -231,7 +231,7 @@ class _RepairsPageState extends State<RepairsPage> {
                           Text(
                             [
                               repair.unitNumber == null
-                                  ? 'Whole property'
+                                  ? 'Common area'
                                   : 'House ${repair.unitNumber}',
                               RepairLabels.categories[repair.category] ??
                                   repair.category,

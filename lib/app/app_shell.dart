@@ -67,7 +67,7 @@ class AppShell extends StatelessWidget {
                   NavigationDestination(
                     icon: Icon(Icons.build_outlined),
                     selectedIcon: Icon(Icons.build),
-                    label: 'Repairs',
+                    label: 'Maintenance',
                   ),
                   NavigationDestination(
                     icon: Icon(Icons.water_drop_outlined),
