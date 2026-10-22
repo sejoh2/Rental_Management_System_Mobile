@@ -81,6 +81,17 @@ jobs:
           flutter-version: 3.44.9
           cache: true
 
+      # Phone notifications: the Firebase settings file is kept off the public repository.
+      # Add it under Settings > Secrets and variables > Actions > Secrets as GOOGLE_SERVICES_JSON
+      # (the whole file). Without the secret the app builds with notifications off.
+      - name: Firebase settings
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          fi
+
       # Signed with the debug key until a release key is set up for the Play Store.
       # API_URL is the hosted backend: add it under Settings > Secrets and variables > Actions > Variables.
       - run: flutter build apk --release --dart-define=API_URL=${{ vars.API_URL }}

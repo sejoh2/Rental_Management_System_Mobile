@@ -11,7 +11,7 @@ import '../../models/unit.dart';
 import '../../widgets/fields.dart';
 import '../../widgets/message_box.dart';
 
-/// Reports something that needs repairing, in a house or the whole property.
+/// Reports a maintenance issue, in a house or a common area, as on the web.
 class RepairFormPage extends StatefulWidget {
   const RepairFormPage({super.key, required this.property});
 
@@ -99,9 +99,7 @@ class _RepairFormPageState extends State<RepairFormPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Repair reported. The owner sees it now.'),
-        ),
+        const SnackBar(content: Text('Issue reported. The owner sees it now.')),
       );
       Navigator.pop(context, true);
     } on ApiException catch (failure) {
@@ -124,7 +122,7 @@ class _RepairFormPageState extends State<RepairFormPage> {
     final tenantName = _tenantName;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Report a repair')),
+      appBar: AppBar(title: const Text('Report maintenance issue')),
       body: ListView(
         padding: const EdgeInsets.all(AppSpace.page),
         children: [
@@ -133,8 +131,8 @@ class _RepairFormPageState extends State<RepairFormPage> {
             autofocus: true,
             textCapitalization: TextCapitalization.sentences,
             decoration: const InputDecoration(
-              labelText: 'What needs repairing',
-              hintText: 'e.g. Leaking kitchen tap',
+              labelText: 'What is the issue',
+              hintText: 'e.g. Broken window',
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -146,7 +144,7 @@ class _RepairFormPageState extends State<RepairFormPage> {
               label: 'Where',
               value: _unitId,
               options: {
-                '': 'The whole property (shared areas)',
+                '': 'Common area (gate, compound, corridor)',
                 for (final unit in units ?? const <Unit>[])
                   unit.id: unit.tenant == null
                       ? 'House ${unit.unitNumber}'
@@ -156,14 +154,14 @@ class _RepairFormPageState extends State<RepairFormPage> {
             ),
           const SizedBox(height: AppSpace.lg),
           SelectField<String>(
-            label: 'Kind of repair',
+            label: 'Category',
             value: _category,
             options: RepairLabels.categories,
             onChanged: (value) => setState(() => _category = value ?? 'other'),
           ),
           const SizedBox(height: AppSpace.lg),
           SelectField<String>(
-            label: 'How urgent',
+            label: 'Priority',
             value: _priority,
             options: const {
               'low': 'Low: can wait',
@@ -201,7 +199,7 @@ class _RepairFormPageState extends State<RepairFormPage> {
             maxLines: 6,
             decoration: const InputDecoration(
               labelText: 'Details (optional)',
-              hintText: 'What you saw, since when',
+              hintText: 'e.g. Bedroom window, glass cracked',
             ),
           ),
           if (_error != null) ...[
@@ -213,7 +211,7 @@ class _RepairFormPageState extends State<RepairFormPage> {
             onPressed: _title.text.trim().length >= 3 && !_saving
                 ? _save
                 : null,
-            child: Text(_saving ? 'Saving...' : 'Report repair'),
+            child: Text(_saving ? 'Saving...' : 'Report issue'),
           ),
         ],
       ),

@@ -19,15 +19,16 @@ import '../../widgets/property_gate.dart';
 import '../../widgets/status_chip.dart';
 import 'expense_form_page.dart';
 
-/// Expenses, opened from More, for the property being worked on.
+/// The Expenses tab, for the property being worked on.
 class ExpensesTab extends StatelessWidget {
   const ExpensesTab({super.key});
 
   @override
   Widget build(BuildContext context) {
     return PropertyGate(
-      builder: (context, property) =>
-          ExpensesPage(key: ValueKey(property.id), property: property),
+      builder: (context, property) => property.canAddExpenses
+          ? ExpensesPage(key: ValueKey(property.id), property: property)
+          : LockedTab(title: 'Expenses', what: 'expenses', property: property),
     );
   }
 }

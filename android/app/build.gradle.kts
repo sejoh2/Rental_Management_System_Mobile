@@ -4,6 +4,12 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Phone notifications need the Firebase settings file, which is not in git (the
+// repository is public). Without it the app still builds; notifications are off.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "io.github.sejoh2.caretaker_app"
     compileSdk = flutter.compileSdkVersion

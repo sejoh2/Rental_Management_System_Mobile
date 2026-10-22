@@ -115,7 +115,7 @@ class _RepairPageState extends State<RepairPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Repair'),
+          title: const Text('Maintenance request'),
           actions: [
             if (repair.isOpen)
               IconButton(
@@ -150,7 +150,7 @@ class _RepairPageState extends State<RepairPage> {
               Text(
                 [
                   repair.unitNumber == null
-                      ? 'Whole property'
+                      ? 'Common area'
                       : 'House ${repair.unitNumber}',
                   if (repair.unitTenantName != null) repair.unitTenantName!,
                   RepairLabels.categories[repair.category] ?? repair.category,
@@ -202,7 +202,7 @@ class _RepairPageState extends State<RepairPage> {
                           : 'Owner',
                     ),
                     if (repair.resolvedAt != null)
-                      _Line('Done on', formatDay(repair.resolvedAt!)),
+                      _Line('Resolved on', formatDay(repair.resolvedAt!)),
                     if ((repair.resolutionNotes ?? '').isNotEmpty)
                       _Line('Notes', repair.resolutionNotes!),
                     if ((repair.cancellationReason ?? '').isNotEmpty)
@@ -266,7 +266,7 @@ class _RepairPageState extends State<RepairPage> {
                             (repository) => repository.update(repair.id, {
                               'assigned_caretaker_id': int.tryParse(me) ?? me,
                             }),
-                            'You are handling this repair.',
+                            'You are handling this request.',
                           ),
                     icon: const Icon(Icons.assignment_ind_outlined),
                     label: const Text('I’ll handle it'),
@@ -284,13 +284,13 @@ class _RepairPageState extends State<RepairPage> {
                 FilledButton.icon(
                   onPressed: () => _act(_DoneSheet(repair: repair)),
                   icon: const Icon(Icons.check_circle_outline),
-                  label: const Text('Mark as done'),
+                  label: const Text('Mark as resolved'),
                 ),
                 const SizedBox(height: AppSpace.sm),
                 TextButton(
                   style: TextButton.styleFrom(foregroundColor: colors.danger),
                   onPressed: () => _act(_CancelSheet(repair: repair)),
-                  child: const Text('Cancel this repair'),
+                  child: const Text('Cancel this request'),
                 ),
               ],
             ],
@@ -426,7 +426,7 @@ class _EditSheetState extends State<_EditSheet> with _Updating {
   @override
   Widget build(BuildContext context) {
     return _Sheet(
-      title: 'Change the repair',
+      title: 'Change the request',
       children: [
         SelectField<String>(
           label: 'Priority',
@@ -571,12 +571,12 @@ class _DoneSheetState extends State<_DoneSheet> with _Updating {
 
     final explained = cost > 0
         ? 'When you save: ${formatKes(cost)} is recorded as a repairs expense for the property. '
-              '${chargeTenant ? '$tenantName is also charged ${formatKes(cost)}. ${atMoveOut ? 'It is not collected during their stay and does not count as arrears; it is deducted from their deposit when they move out.' : 'It is paid from their credit or their next payment; anything still unpaid is deducted from their deposit at move-out.'} No SMS is sent automatically: open this repair again and tap "Send SMS" to tell them.' : 'The tenant is not charged, so it is the owner’s cost.'} '
+              '${chargeTenant ? '$tenantName is also charged ${formatKes(cost)}. ${atMoveOut ? 'It is not collected during their stay and does not count as arrears; it is deducted from their deposit when they move out.' : 'It is paid from their credit or their next payment; anything still unpaid is deducted from their deposit at move-out.'} No SMS is sent automatically: open this request again and tap "Send SMS" to tell them.' : 'The tenant is not charged, so it is the owner’s cost.'} '
               'The cost cannot be changed afterwards.'
         : 'Enter the actual cost to record it as an expense. Without a cost, nothing is recorded in Expenses.';
 
     return _Sheet(
-      title: 'Mark as done',
+      title: 'Mark as resolved',
       children: [
         AmountField(
           controller: _cost,
@@ -615,7 +615,7 @@ class _DoneSheetState extends State<_DoneSheet> with _Updating {
           controller: _notes,
           textCapitalization: TextCapitalization.sentences,
           decoration: const InputDecoration(
-            labelText: 'What was done (optional)',
+            labelText: 'Resolution notes (optional)',
             hintText: 'e.g. Glass replaced',
           ),
         ),
@@ -638,7 +638,7 @@ class _DoneSheetState extends State<_DoneSheet> with _Updating {
                       ? null
                       : _notes.text.trim(),
                 }),
-          child: Text(saving ? 'Saving...' : 'Mark as done'),
+          child: Text(saving ? 'Saving...' : 'Mark as resolved'),
         ),
       ],
     );
@@ -668,7 +668,7 @@ class _CancelSheetState extends State<_CancelSheet> with _Updating {
     final colors = AppColors.of(context);
 
     return _Sheet(
-      title: 'Cancel this repair',
+      title: 'Cancel this request',
       children: [
         TextField(
           controller: _reason,
@@ -693,7 +693,7 @@ class _CancelSheetState extends State<_CancelSheet> with _Updating {
                   'status': 'cancelled',
                   'cancellation_reason': _reason.text.trim(),
                 }),
-          child: Text(saving ? 'Saving...' : 'Cancel repair'),
+          child: Text(saving ? 'Saving...' : 'Cancel request'),
         ),
       ],
     );

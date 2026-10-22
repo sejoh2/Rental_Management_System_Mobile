@@ -53,7 +53,7 @@ class WelcomePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Record meter readings with a photo, report repairs, add expenses and look after '
+                  'Record meter readings with a photo, report maintenance issues, add expenses and look after '
                   'tenants for the properties you care for. The owner sees it all.',
                   style: AppText.text.copyWith(color: AppColors.brandPanelSoft),
                 ),
@@ -121,7 +121,7 @@ class _Highlights extends StatelessWidget {
     return Row(
       children: [
         item('Water', 'Readings'),
-        item('Repairs', 'Reported'),
+        item('Maintenance', 'Reported'),
         item('Receipts', 'Photographed'),
       ],
     );

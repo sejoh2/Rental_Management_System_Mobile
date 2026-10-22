@@ -47,7 +47,7 @@ class _NamePageState extends State<NamePage> {
     return AuthLayout(
       title: 'What is your name?',
       subtitle:
-          'It is shown beside the readings, repairs and payments you record.',
+          'It is shown beside the readings, maintenance and payments you record.',
       children: [
         TextField(
           controller: _name,

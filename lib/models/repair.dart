@@ -162,7 +162,7 @@ abstract final class RepairLabels {
   static const statuses = {
     'reported': 'Reported',
     'in_progress': 'In progress',
-    'resolved': 'Done',
+    'resolved': 'Resolved',
     'cancelled': 'Cancelled',
   };
 }

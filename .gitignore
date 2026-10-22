@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase settings for phone notifications: kept off the public repository.
+# CI writes it from the GOOGLE_SERVICES_JSON secret when building the app.
+/android/app/google-services.json
