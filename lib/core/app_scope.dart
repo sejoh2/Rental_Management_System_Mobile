@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'api_client.dart';
 import 'auth_controller.dart';
+import 'live_controller.dart';
 import 'notices_controller.dart';
 import 'preferences.dart';
 import 'push_controller.dart';
@@ -16,6 +17,7 @@ class AppServices {
     required this.properties,
     required this.notices,
     this.push,
+    this.live,
   });
 
   final ApiClient api;
@@ -26,6 +28,9 @@ class AppServices {
 
   /// Phone notifications; null in tests.
   final PushController? push;
+
+  /// Real-time updates while the app is open; null in tests.
+  final LiveController? live;
 }
 
 /// Gives every screen the shared services.

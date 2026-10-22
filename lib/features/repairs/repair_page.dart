@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_scope.dart';
+import '../../core/live_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/theme/app_theme.dart';
@@ -28,7 +29,16 @@ class RepairPage extends StatefulWidget {
   State<RepairPage> createState() => _RepairPageState();
 }
 
-class _RepairPageState extends State<RepairPage> {
+class _RepairPageState extends State<RepairPage> with LiveRefresh {
+  @override
+  Set<String> get liveAreas => const {'maintenance'};
+
+  @override
+  String? get livePropertyId => widget.property.id;
+
+  @override
+  Future<void> liveReload() => _refresh();
+
   late Repair _repair = widget.repair;
   bool _changed = false;
   bool _busy = false;
@@ -40,6 +50,7 @@ class _RepairPageState extends State<RepairPage> {
 
     if (!_started) {
       _started = true;
+      listenLive(AppScope.read(context).live);
       _refresh();
     }
   }

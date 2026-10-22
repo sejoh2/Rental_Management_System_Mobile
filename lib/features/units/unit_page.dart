@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_scope.dart';
+import '../../core/live_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/theme/app_theme.dart';
@@ -31,7 +32,21 @@ class UnitPage extends StatefulWidget {
   State<UnitPage> createState() => _UnitPageState();
 }
 
-class _UnitPageState extends State<UnitPage> {
+class _UnitPageState extends State<UnitPage> with LiveRefresh {
+  @override
+  Set<String> get liveAreas => const {
+    'units',
+    'tenants',
+    'payments',
+    'billing',
+  };
+
+  @override
+  String? get livePropertyId => widget.property.id;
+
+  @override
+  Future<void> liveReload() => _load();
+
   late Unit _unit = widget.unit;
   String? _error;
   bool _changed = false;
@@ -43,6 +58,7 @@ class _UnitPageState extends State<UnitPage> {
 
     if (!_started) {
       _started = true;
+      listenLive(AppScope.read(context).live);
       _load();
     }
   }

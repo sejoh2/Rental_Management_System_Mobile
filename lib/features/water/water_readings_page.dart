@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_scope.dart';
+import '../../core/live_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/water_repository.dart';
 import '../../models/app_file.dart';
@@ -25,7 +26,17 @@ class WaterReadingsPage extends StatefulWidget {
   State<WaterReadingsPage> createState() => _WaterReadingsPageState();
 }
 
-class _WaterReadingsPageState extends State<WaterReadingsPage> {
+class _WaterReadingsPageState extends State<WaterReadingsPage>
+    with LiveRefresh {
+  @override
+  Set<String> get liveAreas => const {'water', 'units', 'tenants'};
+
+  @override
+  String? get livePropertyId => widget.property.id;
+
+  @override
+  Future<void> liveReload() => _load();
+
   DateTime _month = monthOf(DateTime.now());
 
   List<Unit>? _units;
@@ -43,6 +54,7 @@ class _WaterReadingsPageState extends State<WaterReadingsPage> {
 
     if (!_started) {
       _started = true;
+      listenLive(AppScope.read(context).live);
       _load();
     }
   }

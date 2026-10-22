@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/routes.dart';
 import '../../core/api_client.dart';
 import '../../core/app_scope.dart';
+import '../../core/live_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/theme/app_theme.dart';
@@ -157,7 +158,21 @@ class _PropertyCard extends StatefulWidget {
   State<_PropertyCard> createState() => _PropertyCardState();
 }
 
-class _PropertyCardState extends State<_PropertyCard> {
+class _PropertyCardState extends State<_PropertyCard> with LiveRefresh {
+  @override
+  Set<String> get liveAreas => const {
+    'water',
+    'maintenance',
+    'units',
+    'tenants',
+  };
+
+  @override
+  String? get livePropertyId => widget.property.id;
+
+  @override
+  Future<void> liveReload() => _load();
+
   HomeSummary? _summary;
   bool _failed = false;
   bool _started = false;
@@ -168,6 +183,7 @@ class _PropertyCardState extends State<_PropertyCard> {
 
     if (!_started) {
       _started = true;
+      listenLive(AppScope.read(context).live);
       _load();
     }
   }
