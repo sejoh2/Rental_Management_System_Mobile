@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_scope.dart';
+import '../../core/live_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/theme/app_theme.dart';
@@ -43,7 +44,16 @@ class ExpensesPage extends StatefulWidget {
   State<ExpensesPage> createState() => _ExpensesPageState();
 }
 
-class _ExpensesPageState extends State<ExpensesPage> {
+class _ExpensesPageState extends State<ExpensesPage> with LiveRefresh {
+  @override
+  Set<String> get liveAreas => const {'expenses'};
+
+  @override
+  String? get livePropertyId => widget.property.id;
+
+  @override
+  Future<void> liveReload() => _load();
+
   DateTime _month = monthOf(DateTime.now());
   List<Expense>? _expenses;
   String? _error;
@@ -55,6 +65,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
 
     if (!_started) {
       _started = true;
+      listenLive(AppScope.read(context).live);
       _load();
     }
   }
