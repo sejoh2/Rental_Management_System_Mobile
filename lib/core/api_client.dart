@@ -85,14 +85,43 @@ class ApiClient {
     Object? body,
     bool auth = true,
     String? saveKey,
+    Map<String, String>? query,
   }) {
     return _request(
       'POST',
       path,
       body: body ?? const {},
+      query: query,
       auth: auth,
       saveKey: saveKey,
     );
+  }
+
+  /// A connection the server keeps open (Server-Sent Events), as lines of
+  /// text. It carries a one-minute pass in [query], never the session.
+  Future<Stream<String>> openEventStream(
+    String path, {
+    required Map<String, String> query,
+  }) async {
+    final request = http.Request(
+      'GET',
+      Uri.parse('$baseUrl$path').replace(queryParameters: query),
+    );
+
+    request.headers['Accept'] = 'text/event-stream';
+
+    final response = await _http.send(request).timeout(_timeout);
+
+    if (response.statusCode != 200) {
+      throw ApiException(
+        'The live connection was refused (${response.statusCode}).',
+        status: response.statusCode,
+      );
+    }
+
+    return response.stream
+        .transform(utf8.decoder)
+        .transform(const LineSplitter());
   }
 
   Future<Json> put(String path, {Object? body, String? saveKey}) {

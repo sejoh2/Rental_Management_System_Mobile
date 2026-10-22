@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_scope.dart';
+import '../../core/live_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/theme/app_theme.dart';
@@ -49,7 +50,17 @@ class ElectricityPage extends StatefulWidget {
   State<ElectricityPage> createState() => _ElectricityPageState();
 }
 
-class _ElectricityPageState extends State<ElectricityPage> {
+class _ElectricityPageState extends State<ElectricityPage> with LiveRefresh {
+  @override
+  Set<String> get liveAreas => const {'billing', 'units', 'tenants'};
+
+  @override
+  String? get livePropertyId => widget.property.id;
+
+  @override
+  Future<void> liveReload() =>
+      _saving || _changes().isNotEmpty ? Future<void>.value() : _load();
+
   DateTime _month = monthOf(DateTime.now());
   ElectricityMonth? _data;
 
@@ -65,6 +76,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
 
     if (!_started) {
       _started = true;
+      listenLive(AppScope.read(context).live);
       _load();
     }
   }

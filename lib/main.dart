@@ -5,6 +5,7 @@ import 'config.dart';
 import 'core/api_client.dart';
 import 'core/app_scope.dart';
 import 'core/auth_controller.dart';
+import 'core/live_controller.dart';
 import 'core/notices_controller.dart';
 import 'core/preferences.dart';
 import 'core/push_controller.dart';
@@ -34,6 +35,19 @@ Future<void> main() async {
     auth: auth,
     properties: properties,
   );
+
+  // Real time: screens update by themselves while the app is open.
+  final live = LiveController(api: api, auth: auth);
+
+  live.changes.listen((change) {
+    if (change.everything ||
+        const {'caretakers', 'properties', 'units'}.contains(change.area)) {
+      properties.load();
+    }
+
+    if (change.everything || change.area == 'maintenance') notices.check();
+    if (change.everything || change.area == 'account') auth.refresh();
+  });
 
   // Phone notifications: registers this phone after sign-in.
   final push = PushController(api: api, auth: auth, notices: notices);
@@ -67,6 +81,7 @@ Future<void> main() async {
         properties: properties,
         notices: notices,
         push: push,
+        live: live,
       ),
     ),
   );

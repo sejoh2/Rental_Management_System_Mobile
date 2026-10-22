@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_scope.dart';
+import '../../core/live_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/theme/app_theme.dart';
@@ -37,7 +38,16 @@ class TenantPage extends StatefulWidget {
   State<TenantPage> createState() => _TenantPageState();
 }
 
-class _TenantPageState extends State<TenantPage> {
+class _TenantPageState extends State<TenantPage> with LiveRefresh {
+  @override
+  Set<String> get liveAreas => const {'tenants', 'payments', 'billing'};
+
+  @override
+  String? get livePropertyId => widget.property.id;
+
+  @override
+  Future<void> liveReload() => _load();
+
   Tenant? _tenant;
   TenantStatement? _statement;
   String _period = 'this_month';
@@ -54,6 +64,7 @@ class _TenantPageState extends State<TenantPage> {
 
     if (!_started) {
       _started = true;
+      listenLive(AppScope.read(context).live);
       _load();
     }
   }
