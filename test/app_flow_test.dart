@@ -111,6 +111,15 @@ Map<String, dynamic> _property(int id, String name) => {
   'permission_level': 'level_2',
   'can_manage_tenants': true,
   'can_record_payments': true,
+  'permissions': {
+    'can_read_meters': true,
+    'can_enter_electricity': true,
+    'can_manage_maintenance': true,
+    'can_add_expenses': true,
+    'can_view_tenants': true,
+    'can_manage_tenants': true,
+    'can_record_payments': true,
+  },
 };
 
 /// The server, as the caretaker app sees it.
@@ -432,8 +441,14 @@ void main() {
       // Profile.
       await tester.tap(find.text('Profile'));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Call Alice Wanjiru'),
+        300,
+        scrollable: find.byType(Scrollable).last,
+      );
       expect(find.text('Call Alice Wanjiru'), findsOneWidget);
-      expect(find.text('Level 2: adds and edits tenants'), findsNWidgets(2));
+      expect(find.text('Manage tenants'), findsNWidgets(2));
+      expect(find.text('Record payments'), findsNWidgets(2));
       expect(tester.takeException(), isNull);
 
       // The bell: the repair was opened, so nothing is new now; the list

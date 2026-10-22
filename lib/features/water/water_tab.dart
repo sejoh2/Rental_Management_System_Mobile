@@ -45,7 +45,12 @@ class WaterTab extends StatelessWidget {
           ),
           body: TabBarView(
             children: [
-              if (property.readsMeters)
+              if (!property.canReadMeters)
+                NoAccessView(
+                  what: 'meter readings',
+                  propertyName: property.name,
+                )
+              else if (property.readsMeters)
                 WaterReadingsPage(property: property)
               else
                 const EmptyView(
@@ -55,7 +60,13 @@ class WaterTab extends StatelessWidget {
                       'This property does not bill water by meter, so there is nothing to read. '
                       'If that is wrong, ask the owner to change its water billing.',
                 ),
-              ElectricityPage(property: property),
+              if (property.canEnterElectricity)
+                ElectricityPage(property: property)
+              else
+                NoAccessView(
+                  what: 'electricity bills',
+                  propertyName: property.name,
+                ),
             ],
           ),
         ),

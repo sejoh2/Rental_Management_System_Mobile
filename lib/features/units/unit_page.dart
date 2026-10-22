@@ -120,7 +120,14 @@ class _UnitPageState extends State<UnitPage> {
                 ErrorBox(_error!),
               ],
               const SectionLabel('Tenant'),
-              if (tenant != null)
+              if (tenant != null && !property.canViewTenants)
+                AppCard(
+                  child: Text(
+                    'Someone lives here. Tenants’ details are not part of your work at ${property.name}.',
+                    style: AppText.text.copyWith(color: colors.inkSoft),
+                  ),
+                )
+              else if (tenant != null)
                 AppCard(
                   onTap: () => _open(
                     TenantPage(property: property, tenantId: tenant.id),

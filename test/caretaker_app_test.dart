@@ -2,6 +2,7 @@ import 'package:caretaker_app/features/expenses/electricity_page.dart';
 import 'package:caretaker_app/features/tenants/move_in_costs.dart';
 import 'package:caretaker_app/features/tenants/record_payment_page.dart';
 import 'package:caretaker_app/features/units/units_page.dart';
+import 'package:caretaker_app/models/caretaker_property.dart';
 import 'package:caretaker_app/models/electricity_bill.dart';
 import 'package:caretaker_app/models/repair.dart';
 import 'package:caretaker_app/models/service_charge.dart';
@@ -260,5 +261,44 @@ void main() {
     expect(repair.isFor(null), isFalse);
     expect(repair.caretakerNotice, 'assigned');
     expect(repair.tenantChargeId, '6');
+  });
+
+  group('what the owner lets the caretaker do', () {
+    test('each switch is read from the server', () {
+      final property = CaretakerProperty.fromJson({
+        'id': 1,
+        'name': 'Green Court',
+        'can_manage_tenants': false,
+        'can_record_payments': true,
+        'permissions': {
+          'can_read_meters': true,
+          'can_enter_electricity': false,
+          'can_manage_maintenance': true,
+          'can_add_expenses': false,
+          'can_view_tenants': true,
+          'can_manage_tenants': false,
+          'can_record_payments': true,
+        },
+      });
+
+      expect(property.canReadMeters, isTrue);
+      expect(property.canEnterElectricity, isFalse);
+      expect(property.canAddExpenses, isFalse);
+      expect(property.allowedWork, [
+        'Meter readings',
+        'Maintenance',
+        'View tenants',
+        'Record payments',
+      ]);
+    });
+
+    test('an older server (no switches): the day-to-day work is allowed', () {
+      final property = CaretakerProperty.fromJson({'id': 1, 'name': 'X'});
+
+      expect(property.canReadMeters, isTrue);
+      expect(property.canManageMaintenance, isTrue);
+      expect(property.canViewTenants, isTrue);
+      expect(property.canManageTenants, isFalse);
+    });
   });
 }

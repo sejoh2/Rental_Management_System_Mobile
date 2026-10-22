@@ -8,6 +8,7 @@ import '../core/theme/app_text.dart';
 import '../core/theme/app_theme.dart';
 import '../models/caretaker_property.dart';
 import 'message_box.dart';
+import 'notices_bell.dart';
 
 /// Shows [builder] with the property being worked on, or what is in the way:
 /// the list still loading, a failure, or no property assigned yet. When the
@@ -119,6 +120,33 @@ class PropertyStrip extends StatelessWidget implements PreferredSizeWidget {
             ? InkWell(onTap: () => context.go(Routes.home), child: content)
             : content,
       ),
+    );
+  }
+}
+
+/// A tab whose work the owner has not allowed in this property: its title
+/// and the property strip (to switch), with the reason.
+class LockedTab extends StatelessWidget {
+  const LockedTab({
+    super.key,
+    required this.title,
+    required this.what,
+    required this.property,
+  });
+
+  final String title;
+  final String what;
+  final CaretakerProperty property;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        actions: const [NoticesBell()],
+        bottom: const PropertyStrip(),
+      ),
+      body: NoAccessView(what: what, propertyName: property.name),
     );
   }
 }

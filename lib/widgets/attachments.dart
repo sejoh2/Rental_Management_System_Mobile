@@ -128,35 +128,59 @@ Future<PickedPhoto?> pickPhoto(
 /// Asks what the file is ("ID copy", "Receipt"). Empty is allowed: the
 /// file's own name is shown then. Null when cancelled.
 Future<String?> askFileLabel(BuildContext context, {String? hint}) {
-  final controller = TextEditingController();
-
   return showDialog<String>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
+    builder: (_) => _LabelDialog(hint: hint),
+  );
+}
+
+/// The box keeps its own text field, so the field is let go only once the
+/// box has finished closing (letting it go at once broke the screen).
+class _LabelDialog extends StatefulWidget {
+  const _LabelDialog({this.hint});
+
+  final String? hint;
+
+  @override
+  State<_LabelDialog> createState() => _LabelDialogState();
+}
+
+class _LabelDialogState extends State<_LabelDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
       title: const Text('What is it?'),
       content: TextField(
-        controller: controller,
+        controller: _controller,
         autofocus: true,
         maxLength: 120,
         textCapitalization: TextCapitalization.sentences,
         decoration: InputDecoration(
           labelText: 'Description (optional)',
-          hintText: hint == null ? null : 'e.g. $hint',
+          hintText: widget.hint == null ? null : 'e.g. ${widget.hint}',
         ),
-        onSubmitted: (value) => Navigator.pop(dialogContext, value.trim()),
+        onSubmitted: (value) => Navigator.pop(context, value.trim()),
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(dialogContext),
+          onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
         TextButton(
-          onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
+          onPressed: () => Navigator.pop(context, _controller.text.trim()),
           child: const Text('Upload'),
         ),
       ],
-    ),
-  ).whenComplete(controller.dispose);
+    );
+  }
 }
 
 /// Saves a PDF on the phone (in the app's own space) and opens it in the
@@ -317,7 +341,10 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
       return;
     }
 
-    final label = await askFileLabel(context, hint: widget.labelHint);
+    // A meter photo needs no description; documents and receipts do.
+    final label = widget.kind == FileKind.meterPhoto
+        ? ''
+        : await askFileLabel(context, hint: widget.labelHint);
 
     if (label == null || !mounted) return;
 

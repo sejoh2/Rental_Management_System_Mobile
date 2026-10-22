@@ -182,10 +182,12 @@ class _PropertyCardState extends State<_PropertyCard> {
       // All three at once: one wait instead of three.
       final results = await Future.wait<Object>([
         water.listUnits(property.id),
-        property.readsMeters
+        property.readsMeters && property.canReadMeters
             ? water.listReadings(property.id, billingPeriodOf(month))
             : Future.value(const <WaterReading>[]),
-        PropertyRepository(api).openRepairs(property.id),
+        property.canManageMaintenance
+            ? PropertyRepository(api).openRepairs(property.id)
+            : Future.value(0),
       ]);
 
       if (!mounted) return;
@@ -212,15 +214,18 @@ class _PropertyCardState extends State<_PropertyCard> {
     final todo = summary == null
         ? null
         : [
-            if (property.readsMeters && summary.unitsToRead > 0)
+            if (property.readsMeters &&
+                property.canReadMeters &&
+                summary.unitsToRead > 0)
               summary.unitsLeftToRead == 0
                   ? 'All readings done'
                   : '${summary.unitsLeftToRead} ${summary.unitsLeftToRead == 1 ? 'reading' : 'readings'} left',
             if (summary.flaggedReadings > 0)
               '${summary.flaggedReadings} to fix',
-            summary.openRepairs == 0
-                ? 'No open maintenance'
-                : '${summary.openRepairs} open ${summary.openRepairs == 1 ? 'request' : 'requests'}',
+            if (property.canManageMaintenance)
+              summary.openRepairs == 0
+                  ? 'No open maintenance'
+                  : '${summary.openRepairs} open ${summary.openRepairs == 1 ? 'request' : 'requests'}',
           ].join(' · ');
 
     return AppCard(
@@ -281,12 +286,8 @@ class _PropertyCardState extends State<_PropertyCard> {
             spacing: 6,
             runSpacing: 6,
             children: [
-              StatusChip(
-                property.canManageTenants ? 'Adds tenants' : 'Views tenants',
-                tone: Tone.info,
-              ),
-              if (property.canRecordPayments)
-                const StatusChip('Records payments', tone: Tone.warning),
+              for (final work in property.allowedWork)
+                StatusChip(work, tone: Tone.info),
             ],
           ),
         ],

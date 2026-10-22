@@ -99,6 +99,10 @@ class ApiClient {
     return _request('PUT', path, body: body ?? const {}, saveKey: saveKey);
   }
 
+  Future<Json> delete(String path, {Object? body}) {
+    return _request('DELETE', path, body: body ?? const {});
+  }
+
   Future<Json> patch(String path, {Object? body, String? saveKey}) {
     return _request('PATCH', path, body: body ?? const {}, saveKey: saveKey);
   }

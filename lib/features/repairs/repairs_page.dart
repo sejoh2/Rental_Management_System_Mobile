@@ -24,8 +24,13 @@ class RepairsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PropertyGate(
-      builder: (context, property) =>
-          RepairsPage(key: ValueKey(property.id), property: property),
+      builder: (context, property) => property.canManageMaintenance
+          ? RepairsPage(key: ValueKey(property.id), property: property)
+          : LockedTab(
+              title: 'Maintenance',
+              what: 'maintenance',
+              property: property,
+            ),
     );
   }
 }

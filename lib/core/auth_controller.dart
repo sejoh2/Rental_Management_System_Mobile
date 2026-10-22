@@ -41,6 +41,10 @@ class AuthController extends ChangeNotifier {
   /// The owner of the account, for "Call the owner".
   OwnerContact? owner;
 
+  /// Run first when signing out, while still signed in: the phone's push
+  /// address is taken back.
+  Future<void> Function()? beforeSignOut;
+
   /// Finds out who is signed in. Called when the app opens, and again from
   /// the "Try again" button when the server could not be reached.
   Future<void> start() async {
@@ -139,6 +143,12 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    try {
+      await beforeSignOut?.call();
+    } catch (_) {
+      // Signing out goes ahead.
+    }
+
     final refresh = session.refreshToken;
 
     await session.clear();

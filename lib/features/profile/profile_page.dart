@@ -155,20 +155,10 @@ class ProfilePage extends StatelessWidget {
                           spacing: 6,
                           runSpacing: 6,
                           children: [
-                            StatusChip(
-                              property.canManageTenants
-                                  ? 'Level 2: adds and edits tenants'
-                                  : 'Level 1: views tenants',
-                              tone: Tone.info,
-                            ),
-                            StatusChip(
-                              property.canRecordPayments
-                                  ? 'Records payments'
-                                  : 'No payments',
-                              tone: property.canRecordPayments
-                                  ? Tone.warning
-                                  : Tone.neutral,
-                            ),
+                            for (final work in property.allowedWork)
+                              StatusChip(work, tone: Tone.info),
+                            if (property.allowedWork.isEmpty)
+                              const StatusChip('No access yet'),
                           ],
                         ),
                       ],
