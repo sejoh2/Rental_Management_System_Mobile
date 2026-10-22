@@ -261,3 +261,27 @@ class FullScreenMessage extends StatelessWidget {
     );
   }
 }
+
+/// In place of a screen the owner has not allowed in this property.
+class NoAccessView extends StatelessWidget {
+  const NoAccessView({
+    super.key,
+    required this.what,
+    required this.propertyName,
+  });
+
+  /// "maintenance", "expenses".
+  final String what;
+  final String propertyName;
+
+  @override
+  Widget build(BuildContext context) {
+    return EmptyView(
+      icon: Icons.lock_outline,
+      title: 'Not part of your work here',
+      message:
+          'The owner has not given you access to $what at $propertyName. '
+          'If you need it, ask the owner (Profile has their number).',
+    );
+  }
+}

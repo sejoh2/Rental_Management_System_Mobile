@@ -143,6 +143,7 @@ class UnitTenant {
   factory UnitTenant.fromJson(Json json) {
     return UnitTenant(
       id: '${json['tenant_id']}',
+      // Both null when the owner has not let the caretaker see tenants.
       fullName: json['full_name'] as String? ?? '',
       status: json['status'] as String? ?? '',
       balance: (json['balance'] as num?)?.toDouble() ?? 0,

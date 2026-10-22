@@ -14,9 +14,19 @@ class CaretakerProperty {
     required this.canRecordPayments,
     this.moveInBilling = 'prorated',
     this.rentDueDay,
+    this.canReadMeters = true,
+    this.canEnterElectricity = true,
+    this.canManageMaintenance = true,
+    this.canAddExpenses = true,
+    this.canViewTenants = true,
   });
 
   factory CaretakerProperty.fromJson(Json json) {
+    final permissions = json['permissions'];
+    // A server from before the switches: the day-to-day work was allowed.
+    bool allowed(String key, {bool otherwise = true}) =>
+        permissions is Map ? permissions[key] == true : otherwise;
+
     return CaretakerProperty(
       id: '${json['id']}',
       name: json['name'] as String? ?? '',
@@ -27,6 +37,11 @@ class CaretakerProperty {
       waterRatePerUnit: (json['water_rate_per_unit'] as num?)?.toDouble(),
       canManageTenants: json['can_manage_tenants'] == true,
       canRecordPayments: json['can_record_payments'] == true,
+      canReadMeters: allowed('can_read_meters'),
+      canEnterElectricity: allowed('can_enter_electricity'),
+      canManageMaintenance: allowed('can_manage_maintenance'),
+      canAddExpenses: allowed('can_add_expenses'),
+      canViewTenants: allowed('can_view_tenants'),
       moveInBilling: json['move_in_billing'] as String? ?? 'prorated',
       rentDueDay: (json['rent_due_day'] as num?)?.toInt(),
     );
@@ -42,11 +57,32 @@ class CaretakerProperty {
   /// The property's rate; a unit may have its own.
   final double? waterRatePerUnit;
 
-  /// Level 2: may add and edit tenants, and see their documents.
+  /// What the owner lets this caretaker do here, one switch each.
+  /// May add and edit tenants, mark notice, and see their documents.
   final bool canManageTenants;
 
-  /// Turned on by the owner for this property.
+  /// May record cash or bank payments handed to them.
   final bool canRecordPayments;
+
+  final bool canReadMeters;
+  final bool canEnterElectricity;
+  final bool canManageMaintenance;
+  final bool canAddExpenses;
+
+  /// Tenants' names, phones, balances and statements. Without it, units
+  /// show only whether they are occupied.
+  final bool canViewTenants;
+
+  /// The switches that are on, in words, for Profile and Home.
+  List<String> get allowedWork => [
+    if (canReadMeters) 'Meter readings',
+    if (canEnterElectricity) 'Electricity',
+    if (canManageMaintenance) 'Maintenance',
+    if (canAddExpenses) 'Expenses',
+    if (canViewTenants) 'View tenants',
+    if (canManageTenants) 'Manage tenants',
+    if (canRecordPayments) 'Record payments',
+  ];
 
   /// How the first month is billed when a tenant moves in mid-month:
   /// prorated, full_month or free_until_next_month.

@@ -36,7 +36,7 @@ void main() {
 
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
-    expect(find.text('Repairs and expenses'), findsOneWidget);
+    expect(find.text('Maintenance and expenses'), findsOneWidget);
 
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();

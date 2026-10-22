@@ -89,7 +89,10 @@ class _UnitsPageState extends State<UnitsPage> {
     try {
       final results = await Future.wait<Object>([
         WaterRepository(api).listUnits(widget.property.id),
-        TenantRepository(api).list(widget.property.id),
+        // Former tenants are names and balances: only with "view tenants".
+        widget.property.canViewTenants
+            ? TenantRepository(api).list(widget.property.id)
+            : Future.value(const <Tenant>[]),
       ]);
 
       if (!mounted) return;
@@ -178,7 +181,9 @@ class _UnitsPageState extends State<UnitsPage> {
                   controller: _search,
                   textInputAction: TextInputAction.search,
                   decoration: InputDecoration(
-                    hintText: 'Search house or tenant',
+                    hintText: widget.property.canViewTenants
+                        ? 'Search house or tenant'
+                        : 'Search house',
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _search.text.isEmpty
                         ? null
@@ -209,11 +214,13 @@ class _UnitsPageState extends State<UnitsPage> {
                         UnitFilter.vacant,
                         units == null ? 'Vacant' : 'Vacant ($vacant)',
                       ),
-                      (
-                        UnitFilter.owing,
-                        units == null ? 'Owing' : 'Owing ($owing)',
-                      ),
-                      (UnitFilter.former, 'Former tenants'),
+                      if (widget.property.canViewTenants) ...[
+                        (
+                          UnitFilter.owing,
+                          units == null ? 'Owing' : 'Owing ($owing)',
+                        ),
+                        (UnitFilter.former, 'Former tenants'),
+                      ],
                     ]) ...[
                       ChoiceChip(
                         label: Text(label),
@@ -296,6 +303,7 @@ class _UnitsPageState extends State<UnitsPage> {
 
                     return _UnitTile(
                       unit: unit,
+                      showTenant: widget.property.canViewTenants,
                       onTap: () => _open(
                         UnitPage(property: widget.property, unit: unit),
                       ),
@@ -311,10 +319,17 @@ class _UnitsPageState extends State<UnitsPage> {
 }
 
 class _UnitTile extends StatelessWidget {
-  const _UnitTile({required this.unit, required this.onTap});
+  const _UnitTile({
+    required this.unit,
+    required this.onTap,
+    this.showTenant = true,
+  });
 
   final Unit unit;
   final VoidCallback onTap;
+
+  /// Off without "view tenants": occupied, but not who or what they owe.
+  final bool showTenant;
 
   @override
   Widget build(BuildContext context) {
@@ -351,7 +366,9 @@ class _UnitTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  tenant == null ? 'Vacant' : tenant.fullName,
+                  tenant == null
+                      ? 'Vacant'
+                      : (showTenant ? tenant.fullName : 'Occupied'),
                   style: AppText.label.copyWith(
                     color: tenant == null ? colors.inkSoft : colors.ink,
                   ),
@@ -374,6 +391,8 @@ class _UnitTile extends StatelessWidget {
             children: [
               if (!unit.isOccupied)
                 const StatusChip('Vacant')
+              else if (!showTenant)
+                const StatusChip('Occupied', tone: Tone.info)
               else if (owes)
                 Text(
                   formatKes(tenant!.balance),

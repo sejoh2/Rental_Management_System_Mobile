@@ -7,6 +7,7 @@ import 'core/app_scope.dart';
 import 'core/auth_controller.dart';
 import 'core/notices_controller.dart';
 import 'core/preferences.dart';
+import 'core/push_controller.dart';
 import 'core/properties_controller.dart';
 import 'core/session_store.dart';
 import 'data/property_repository.dart';
@@ -34,6 +35,9 @@ Future<void> main() async {
     properties: properties,
   );
 
+  // Phone notifications: registers this phone after sign-in.
+  final push = PushController(api: api, auth: auth, notices: notices);
+
   // The caretaker's properties are loaded once signed in, and forgotten on sign-out.
   auth.addListener(() {
     final user = auth.user;
@@ -52,6 +56,7 @@ Future<void> main() async {
 
   // Finds out who is signed in while the first screen is drawn.
   auth.start();
+  push.start();
 
   runApp(
     CaretakerApp(
@@ -61,6 +66,7 @@ Future<void> main() async {
         preferences: preferences,
         properties: properties,
         notices: notices,
+        push: push,
       ),
     ),
   );
