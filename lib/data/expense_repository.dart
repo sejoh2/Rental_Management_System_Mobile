@@ -47,7 +47,7 @@ class ExpenseRepository {
         'amount': amount,
         'expense_date': date,
         'notes': ?notes,
-        if (unitId != null) 'unit_id': int.parse(unitId),
+        'unit_id': ?unitId,
       },
     );
 
@@ -76,7 +76,7 @@ class ExpenseRepository {
         'period': period,
         'bills': [
           for (final entry in amountsByUnit.entries)
-            {'unit_id': int.parse(entry.key), 'amount': entry.value},
+            {'unit_id': entry.key, 'amount': entry.value},
         ],
       },
     );

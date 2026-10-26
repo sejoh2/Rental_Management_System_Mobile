@@ -39,7 +39,7 @@ class RepairRepository {
         'description': ?description,
         'category': category,
         'priority': priority,
-        if (unitId != null) 'unit_id': int.parse(unitId),
+        'unit_id': ?unitId,
         'charge_to_tenant': chargeToTenant,
         if (chargeToTenant) 'charge_timing': chargeTiming,
       },
