@@ -275,7 +275,7 @@ class _RepairPageState extends State<RepairPage> with LiveRefresh {
                         ? null
                         : () => _quick(
                             (repository) => repository.update(repair.id, {
-                              'assigned_caretaker_id': int.tryParse(me) ?? me,
+                              'assigned_caretaker_id': me,
                             }),
                             'You are handling this request.',
                           ),
