@@ -39,7 +39,7 @@ class TenantRepository {
       '/api/properties/$propertyId/tenants',
       saveKey: saveKey,
       body: {
-        'unit_id': int.parse(unitId),
+        'unit_id': unitId,
         'full_name': fullName,
         'phone': phone,
         'email': ?email,
