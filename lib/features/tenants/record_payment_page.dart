@@ -42,6 +42,26 @@ const paymentAccountHints = {
       'Settles service charges, such as garbage or security, and repairs charged to the tenant.',
 };
 
+/// An M-Pesa receipt number as the server keeps it: no spaces, capitals.
+String normalizeReceipt(String text) =>
+    text.replaceAll(RegExp(r'\s+'), '').toUpperCase();
+
+/// Why the receipt number cannot be saved yet, or null when it can. Money
+/// paid by M-Pesa must carry its receipt number (TJU4K8P2QX), so the same
+/// money is never counted twice; other methods do not need one. The same
+/// rule as the web and the server.
+String? receiptProblem(String method, String text) {
+  if (method != 'mpesa') return null;
+
+  final receipt = normalizeReceipt(text);
+
+  if (receipt.isEmpty) return 'Enter the M-Pesa receipt number.';
+
+  return RegExp(r'^[A-Z0-9]{8,12}$').hasMatch(receipt)
+      ? null
+      : 'An M-Pesa receipt number is 10 letters and digits, for example TJU4K8P2QX.';
+}
+
 /// When a payment was received: now for today (so the receipt shows the
 /// real time), midday for an earlier day. As on the web.
 DateTime receivedAtFor(DateTime day, DateTime now) {
@@ -131,7 +151,9 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
         method: _method,
         accountFor: _account,
         receivedAt: receivedAtFor(_received, DateTime.now()),
-        reference: _reference.text.trim().isEmpty
+        reference: _method == 'mpesa'
+            ? normalizeReceipt(_reference.text)
+            : _reference.text.trim().isEmpty
             ? null
             : _reference.text.trim(),
         notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
@@ -214,9 +236,21 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
           TextField(
             controller: _reference,
             textCapitalization: TextCapitalization.characters,
-            decoration: const InputDecoration(
-              labelText: 'Reference (optional)',
-              hintText: 'e.g. receipt or transaction number',
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              labelText: _method == 'mpesa'
+                  ? 'M-Pesa receipt number'
+                  : 'Reference (optional)',
+              hintText: _method == 'mpesa'
+                  ? 'e.g. TJU4K8P2QX'
+                  : 'e.g. receipt or transaction number',
+              helperText: _method == 'mpesa'
+                  ? 'Required for M-Pesa. It is at the start of the tenant’s M-Pesa message.'
+                  : null,
+              helperMaxLines: 2,
+              errorText: _method == 'mpesa' && _reference.text.trim().isNotEmpty
+                  ? receiptProblem(_method, _reference.text)
+                  : null,
             ),
           ),
           const SizedBox(height: AppSpace.lg),
@@ -234,7 +268,12 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
           ],
           const SizedBox(height: AppSpace.xl),
           FilledButton(
-            onPressed: _value != null && !_saving ? _confirmAndSave : null,
+            onPressed:
+                _value != null &&
+                    receiptProblem(_method, _reference.text) == null &&
+                    !_saving
+                ? _confirmAndSave
+                : null,
             child: Text(_saving ? 'Recording...' : 'Record payment'),
           ),
         ],
